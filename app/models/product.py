@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, Text
-from .database import Base
+from ..database import Base
 
 class Product(Base):
     __tablename__ = "products"
@@ -8,5 +8,6 @@ class Product(Base):
     name = Column(String(100), nullable=False)
     description = Column(Text)
     price = Column(Float, nullable=False)
-    image_url = Column(String(255))  # Đường dẫn ảnh lưu trong /static/
-    category = Column(String(50))    # VD: Thức ăn, Phụ kiện, Thú cảnh
+    image_url = Column(String(255))
+    category = Column(String(50))
+    stock = Column(Integer)
