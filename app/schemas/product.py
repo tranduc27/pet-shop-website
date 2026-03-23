@@ -1,8 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
-<<<<<<< HEAD:app/schemas/product.py
-=======
+
 # Schema cho User
 class UserBase(BaseModel):
     username: str
@@ -27,7 +26,7 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 # Schema cho Sản phẩm
->>>>>>> 5d7198a0547d63d0a5fb9b3e73db4afdff710709:app/schemas.py
+
 class ProductBase(BaseModel):
     name: str
     description: Optional[str] = None
