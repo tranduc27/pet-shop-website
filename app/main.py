@@ -1,13 +1,23 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from .database import SessionLocal, engine, get_db
 from . import models, schemas
+from .routers import auth
 
-# Lệnh này sẽ tự động tạo file pet_shop.db và các bảng (products,...) 
+# Lệnh này sẽ tự động tạo file pet_shop.db và các bảng (products, users...) 
 # nếu chúng chưa tồn tại
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Website Bán Sản Phẩm Thú Cưng - Nhóm 14")
+
+# Cấu hình Rate Limiting
+app.state.limiter = auth.limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Đăng ký các router
+app.include_router(auth.router)
 
 @app.get("/")
 def home():
