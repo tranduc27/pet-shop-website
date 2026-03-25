@@ -13,6 +13,11 @@ router = APIRouter(
 def read_products(skip: int = 0, limit: int = 50, db: Session = Depends(database.get_db)):
     return db.query(models.Product).offset(skip).limit(limit).all()
 
+# 1.6 XEM LATEST PRODUCTS (Slider)
+@router.get("/latest", response_model=List[schemas.Product])
+def get_latest_products(limit: int = 10, db: Session = Depends(database.get_db)):
+    return db.query(models.Product).order_by(models.Product.id.desc()).limit(limit).all()
+
 # 2. XEM CHI TIẾT 1 SẢN PHẨM
 @router.get("/{product_id}", response_model=schemas.Product)
 def read_product(product_id: int, db: Session = Depends(database.get_db)):

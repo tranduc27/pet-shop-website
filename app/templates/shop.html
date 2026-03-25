@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cửa Hàng - Pet Haven</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Icon FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/style.css?v=2.7">
+    <style>
+        .shop-wrapper {
+            background: var(--bg-color);
+            padding-top: 100px;
+            padding-bottom: 60px;
+        }
+
+        .shop-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        .shop-sidebar {
+            width: 260px;
+            flex-shrink: 0;
+            background: #fff;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+            position: sticky;
+            top: 100px;
+        }
+
+        .shop-main {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .shop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            background: #fff;
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+            gap: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg-color);
+            padding: 10px 20px;
+            border-radius: 30px;
+            flex-grow: 1;
+        }
+
+        .search-box i {
+            color: var(--text-secondary);
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            margin-left: 10px;
+            width: 100%;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .sort-box select {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid #eee;
+            outline: none;
+            font-family: inherit;
+            cursor: pointer;
+            background: var(--bg-color);
+        }
+
+        .filter-group {
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+        
+        .filter-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .filter-group h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-item {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.3s;
+        }
+        
+        .filter-item:hover {
+            color: var(--primary);
+        }
+
+        .filter-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        @media (max-width: 900px) {
+            .shop-container {
+                flex-direction: column;
+            }
+            .shop-sidebar {
+                width: 100%;
+                position: static;
+            }
+            .shop-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="brand">
+                <i class="fa-solid fa-paw"></i> Pet Haven
+            </a>
+            <div class="nav-links">
+                <a href="/">Trang chủ</a>
+                <a href="/shop" class="active">Sản phẩm</a>
+                <a href="/services">Dịch vụ</a>
+                <a href="/about">Về chúng tôi</a>
+            </div>
+            <div class="nav-actions">
+                <div class="cart-icon" onclick="toggleCart()">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="cart-count">0</span>
+                </div>
+                <div id="auth-buttons" class="auth-buttons">
+                    <button class="btn btn-outline" onclick="openModal('login-modal')">Đăng nhập</button>
+                    <button class="btn btn-primary" onclick="openModal('register-modal')">Đăng ký</button>
+                </div>
+                <div id="user-info" class="user-info hidden">
+                    <span id="username-display"></span>
+                    <button class="btn btn-outline btn-sm" onclick="handleLogout()">Đăng xuất</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="shop-wrapper">
+        <div class="container shop-container">
+            <!-- Sidebar (Bộ lọc) -->
+            <aside class="shop-sidebar">
+                <div class="filter-group">
+                    <h3><i class="fa-solid fa-paw"></i> Vật Nuôi</h3>
+                    <label class="filter-item"><input type="checkbox" class="filter-animal" value="chó" onchange="applyFilters()"> Dành cho chó (Dog)</label>
+                    <label class="filter-item"><input type="checkbox" class="filter-animal" value="mèo" onchange="applyFilters()"> Dành cho mèo (Cat)</label>
+                    <label class="filter-item"><input type="checkbox" class="filter-animal" value="chung" onchange="applyFilters()"> Dành chung (General)</label>
+                </div>
+
+                <div class="filter-group">
+                    <h3><i class="fa-solid fa-box-open"></i> Danh Mục Thiết Bị</h3>
+                    <label class="filter-item"><input type="checkbox" class="filter-type" value="thức ăn" onchange="applyFilters()"> Thức ăn & Pate</label>
+                    <label class="filter-item"><input type="checkbox" class="filter-type" value="phụ kiện" onchange="applyFilters()"> Bát, Chuồng, Đồ chơi</label>
+                    <label class="filter-item"><input type="checkbox" class="filter-type" value="vệ sinh" onchange="applyFilters()"> Đồ làm vệ sinh</label>
+                    <label class="filter-item"><input type="checkbox" class="filter-type" value="quần áo" onchange="applyFilters()"> Quần áo, Váy</label>
+                    <label class="filter-item"><input type="checkbox" class="filter-type" value="sức khỏe" onchange="applyFilters()"> Sức khỏe, Dinh dưỡng</label>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="shop-main">
+                <div class="shop-header">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="search-input" placeholder="Tìm kiếm tên sản phẩm..." onkeyup="applyFilters()">
+                    </div>
+                    <div class="sort-box">
+                        <select id="sort-select" onchange="applyFilters()">
+                            <option value="default">Sắp xếp Mặc định</option>
+                            <option value="price-asc"><i class="fa-solid fa-arrow-up-1-9"></i> Giá: Từ thấp đến cao</option>
+                            <option value="price-desc"><i class="fa-solid fa-arrow-down-9-1"></i> Giá: Từ cao đến thấp</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Product Grid Container -->
+                <div id="product-grid" class="product-grid">
+                    <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu cửa hàng...</div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <h2><i class="fa-solid fa-paw"></i> Pet Haven</h2>
+                <p>Nơi tốt nhất để chăm sóc thú cưng của bạn. Cung cấp sản phẩm chất lượng, dịch vụ tận tâm.</p>
+            </div>
+            <div class="footer-links">
+                <h3>Liên Kết</h3>
+                <ul>
+                    <li><a href="/">Trang chủ</a></li>
+                    <li><a href="/shop">Sản phẩm</a></li>
+                    <li><a href="/services">Dịch vụ</a></li>
+                    <li><a href="/about">Về chúng tôi</a></li>
+                </ul>
+            </div>
+            <div class="footer-contact">
+                <h3>Liên Hệ</h3>
+                <p><i class="fa-solid fa-envelope"></i> contact@pethaven.com</p>
+                <p><i class="fa-solid fa-phone"></i> +84 123 456 789</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Pet Haven. All rights reserved. Nhóm 14.</p>
+        </div>
+    </footer>
+
+    <!-- Modals -->
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal('login-modal')"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h2>Chào Mừng Trở Lại</h2>
+                <p>Đăng nhập để xem lịch sử mua hàng và giỏ hàng</p>
+            </div>
+            <form id="login-form" class="modal-form">
+                <div class="form-group">
+                    <label for="login-username">Tên đăng nhập</label>
+                    <input type="text" id="login-username" name="username" placeholder="Nhập tên đăng nhập" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Mật khẩu</label>
+                    <input type="password" id="login-password" name="password" placeholder="Nhập mật khẩu" required>
+                </div>
+                <div id="login-error" class="error-msg hidden"></div>
+                <button type="submit" class="btn btn-primary btn-full">Đăng Nhập</button>
+            </form>
+            <div class="modal-footer">
+                <p>Chưa có tài khoản? <a href="#" onclick="switchModal('login-modal', 'register-modal')">Đăng ký ngay</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal('register-modal')"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h2>Tạo Tài Khoản</h2>
+                <p>Tham gia cộng đồng yêu thú cưng của chúng tôi</p>
+            </div>
+            <form id="register-form" class="modal-form">
+                <div class="form-group">
+                    <label for="reg-username">Tên đăng nhập</label>
+                    <input type="text" id="reg-username" placeholder="Nhập tên đăng nhập" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Mật khẩu</label>
+                    <input type="password" id="reg-password" placeholder="Nhập mật khẩu" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-confirm">Xác nhận mật khẩu</label>
+                    <input type="password" id="reg-confirm" placeholder="Nhập lại mật khẩu" required>
+                </div>
+                <div id="reg-error" class="error-msg hidden"></div>
+                <button type="submit" class="btn btn-primary btn-full">Đăng Ký</button>
+            </form>
+            <div class="modal-footer">
+                <p>Đã có tài khoản? <a href="#" onclick="switchModal('register-modal', 'login-modal')">Đăng nhập</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="modal-overlay hidden">
+        <div class="cart-sidebar">
+            <button class="modal-close" onclick="closeModal('cart-modal')"><i class="fa-solid fa-xmark"></i></button>
+            <div class="cart-header">
+                <h2><i class="fa-solid fa-cart-shopping"></i> Giỏ Hàng Của Bạn</h2>
+            </div>
+            <div id="cart-items" class="cart-items">
+                <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</div>
+            </div>
+            <div class="cart-footer">
+                <div class="cart-total">
+                    <span>Tổng cộng:</span>
+                    <span id="cart-total-price">0 ₫</span>
+                </div>
+                <button class="btn btn-primary btn-full" onclick="handleCheckout()">Tiến Hành Thanh Toán</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- JS -->
+    <script src="/static/main.js?v=2.0"></script>
+    <script>
+        let allProducts = [];
+
+        // Ovverride event from main.js (We need to let main.js run first to load auth)
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadShopProducts();
+        });
+
+        async function loadShopProducts() {
+            const grid = document.getElementById('product-grid');
+            try {
+                const res = await fetch(`${API_URL}/products/`);
+                const data = await res.json();
+                
+                if (res.ok) {
+                    allProducts = data;
+                    applyFilters(); // Initial render
+                } else {
+                    grid.innerHTML = '<p class="error-msg">Không thể tải danh sách sản phẩm.</p>';
+                }
+            } catch (err) {
+                grid.innerHTML = '<p class="error-msg">Lỗi kết nối máy chủ.</p>';
+            }
+        }
+
+        function applyFilters() {
+            // Lấy từ khóa tìm kiếm
+            const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+            
+            // Lấy sắp xếp
+            const sortVal = document.getElementById('sort-select').value;
+            
+            // Lấy các Checkbox đã tích
+            const animalCheckboxes = document.querySelectorAll('.filter-animal:checked');
+            const typeCheckboxes = document.querySelectorAll('.filter-type:checked');
+            
+            const selectedAnimals = Array.from(animalCheckboxes).map(cb => cb.value.toLowerCase());
+            const selectedTypes = Array.from(typeCheckboxes).map(cb => cb.value.toLowerCase());
+            
+            // 1. FILTERING
+            let filtered = allProducts.filter(p => {
+                // Tạo một đoạn text gộp chung mọi thông tin của sản phẩm (tìm cho dễ)
+                const text = `${p.name} ${p.description || ''} ${p.category || ''}`.toLowerCase();
+                
+                // Lọc tìm kiếm Textbox
+                const matchesSearch = text.includes(searchQuery);
+                
+                // Lọc vật nuôi (AND check)
+                let passAnimal = true;
+                if (selectedAnimals.length > 0) {
+                    passAnimal = selectedAnimals.some(sc => text.includes(sc));
+                }
+                
+                // Lọc danh mục thiết bị (AND check)
+                let passType = true;
+                if (selectedTypes.length > 0) {
+                    passType = selectedTypes.some(sc => text.includes(sc));
+                }
+                
+                return matchesSearch && passAnimal && passType;
+            });
+            
+            // 2. SORTING
+            if (sortVal === 'price-asc') {
+                filtered.sort((a, b) => a.price - b.price);
+            } else if (sortVal === 'price-desc') {
+                filtered.sort((a, b) => b.price - a.price);
+            }
+            
+            // 3. RENDER (Using function from main.js)
+            renderProducts(filtered);
+        }
+    </script>
+</body>
+</html>
