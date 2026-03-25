@@ -207,3 +207,4 @@ marimo/_lsp/
 __marimo__/
 pet_shop.db
 .idea/
+*.db-journal
