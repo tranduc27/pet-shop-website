@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Text
+from sqlalchemy import Column, Integer, String, Float, Text, Boolean
 from ..database import Base
 
 class Product(Base):
@@ -10,3 +10,6 @@ class Product(Base):
     image_url = Column(String(255))
     category = Column(String(50))
     stock = Column(Integer)
+    size = Column(String(50), nullable=True)
+    discount_percent = Column(Float, default=0.0)
+    is_today_sale = Column(Boolean, default=False)

@@ -5,3 +5,5 @@ from .order_item import OrderItem
 from .cart import Cart
 from .service import Service
 from .appointment import Appointment
+from .wishlist import Wishlist
+from .review import Review
