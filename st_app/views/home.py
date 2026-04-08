@@ -35,9 +35,9 @@ try:
                 disc_p = prod.discount_percent if prod.discount_percent else 0
                 if prod.is_today_sale and disc_p > 0:
                     new_price = prod.price * (1 - disc_p / 100)
-                    price_html = f"<s>&#36;{prod.price:.2f}</s> <span style='color: #ff4757; font-weight: bold;'>➔ &#36;{new_price:.2f}</span>"
+                    price_html = f"<s>{prod.price:,.0f} VNĐ</s> <span style='color: #ff4757; font-weight: bold;'>➔ {new_price:,.0f} VNĐ</span>"
                 else:
-                    price_html = f"&#36;{prod.price:.2f}"
+                    price_html = f"{prod.price:,.0f} VNĐ"
                 
                 # HTML card rendering for beautiful UI
                 st.markdown(f"""
@@ -49,7 +49,7 @@ try:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                if st.button(f"View ##{prod.id}", key=f"view_sale_{prod.id}", use_container_width=True):
+                if st.button(f"View ##{prod.id}", key=f"view_sale_{prod.id}", width="stretch"):
                     st.session_state.selected_product_id = prod.id
                     st.switch_page("views/shop.py")
 

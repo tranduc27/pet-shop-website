@@ -4,9 +4,13 @@ from app.models.product import Product
 from app.models.cart import Cart
 from app.models.wishlist import Wishlist
 from app.models.review import Review
+from app.models.user import User
+from st_app.auth_utils import hash_password, verify_password
 from st_app.utils import t
 
 st.title(f"🛍️ {t('shop')}")
+
+
 
 @st.dialog("Product Details", width="large")
 def product_detail_modal(product):
@@ -15,7 +19,7 @@ def product_detail_modal(product):
         img_url = product.image_url if product.image_url else f"https://picsum.photos/seed/{product.id}/400/400"
         if not img_url.startswith("http"):
              img_url = f"https://picsum.photos/seed/{product.id}/400/400"
-        st.image(img_url, use_container_width=True)
+        st.image(img_url, width="stretch")
     with cols[1]:
         st.header(product.name)
         
@@ -31,9 +35,9 @@ def product_detail_modal(product):
         disc_p = product.discount_percent if product.discount_percent else 0
         if product.is_today_sale and disc_p > 0:
             new_price = product.price * (1 - disc_p / 100)
-            st.markdown(f"**{t('price')}:** <s>&#36;{product.price:.2f}</s> <span style='color:#ff4757; font-weight:bold;'>&#36;{new_price:.2f} (-{int(disc_p)}%)</span>", unsafe_allow_html=True)
+            st.markdown(f"**{t('price')}:** <s>{product.price:,.0f} VNĐ</s> <span style='color:#ff4757; font-weight:bold;'>{new_price:,.0f} VNĐ (-{int(disc_p)}%)</span>", unsafe_allow_html=True)
         else:
-            st.write(f"**{t('price')}:** ${product.price:.2f}")
+            st.write(f"**{t('price')}:** {product.price:,.0f} VNĐ")
         st.write(product.description or "No description available.")
         
         size = st.selectbox(t('size'), product.size.split(',') if product.size else ["Default"])
@@ -42,35 +46,42 @@ def product_detail_modal(product):
         
         c1, c2 = st.columns(2)
         with c1:
-            if st.button(t('add_to_cart'), use_container_width=True, type="primary"):
-                db = SessionLocal()
-                try:
-                    session_id = st.session_state.session_id
-                    existing = db.query(Cart).filter_by(session_id=session_id, product_id=product.id).first()
-                    if existing:
-                        existing.quantity += qty
-                    else:
-                        new_item = Cart(session_id=session_id, product_id=product.id, quantity=qty)
-                        db.add(new_item)
-                    db.commit()
-                    st.success("Added to cart!")
-                    st.rerun()
-                finally:
-                    db.close()
-        with c2:
-            if st.button("❤️ Add to Wishlist", use_container_width=True):
-                db = SessionLocal()
-                try:
-                    exists = db.query(Wishlist).filter_by(session_id=st.session_state.session_id, product_id=product.id).first()
-                    if not exists:
-                        wl = Wishlist(session_id=st.session_state.session_id, product_id=product.id)
-                        db.add(wl)
+            if st.button(t('add_to_cart'), width="stretch", type="primary"):
+                if not st.session_state.get("user_id"):
+                    st.switch_page("views/login.py")
+                else:
+                    db = SessionLocal()
+                    try:
+                        user_id = st.session_state.user_id
+                        existing = db.query(Cart).filter_by(user_id=user_id, product_id=product.id).first()
+                        if existing:
+                            existing.quantity += qty
+                        else:
+                            new_item = Cart(user_id=user_id, product_id=product.id, quantity=qty)
+                            db.add(new_item)
                         db.commit()
-                        st.success("Added to wishlist!")
-                    else:
-                        st.info("Already in wishlist")
-                finally:
-                    db.close()
+                        st.success("Added to cart!")
+                        st.rerun()
+                    finally:
+                        db.close()
+        with c2:
+            if st.button("❤️ Add to Wishlist", width="stretch"):
+                if not st.session_state.get("user_id"):
+                    st.switch_page("views/login.py")
+                else:
+                    db = SessionLocal()
+                    try:
+                        user_id = st.session_state.user_id
+                        exists = db.query(Wishlist).filter_by(user_id=user_id, product_id=product.id).first()
+                        if not exists:
+                            wl = Wishlist(user_id=user_id, product_id=product.id)
+                            db.add(wl)
+                            db.commit()
+                            st.success("Added to wishlist!")
+                        else:
+                            st.info("Already in wishlist")
+                    finally:
+                        db.close()
                     
     st.divider()
     st.subheader("Customer Reviews")
@@ -122,9 +133,9 @@ try:
             disc_p = prod.discount_percent if prod.discount_percent else 0
             if prod.is_today_sale and disc_p > 0:
                 new_price = prod.price * (1 - disc_p / 100)
-                price_html = f"<s>&#36;{prod.price:.2f}</s> <span style='color: #ff4757; font-weight: bold;'>➔ &#36;{new_price:.2f}</span>"
+                price_html = f"<s>{prod.price:,.0f} VNĐ</s> <span style='color: #ff4757; font-weight: bold;'>➔ {new_price:,.0f} VNĐ</span>"
             else:
-                price_html = f"&#36;{prod.price:.2f}"
+                price_html = f"{prod.price:,.0f} VNĐ"
             
             st.markdown(f"""
             <div class="product-card">
@@ -134,7 +145,7 @@ try:
             </div>
             """, unsafe_allow_html=True)
             
-            if st.button(f"View Details", key=f"shop_view_{prod.id}", use_container_width=True):
+            if st.button(f"View Details", key=f"shop_view_{prod.id}", width="stretch"):
                 product_detail_modal(prod)
 finally:
     db.close()

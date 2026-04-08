@@ -8,8 +8,12 @@ st.title(f"🛒 {t('cart')}")
 
 db = SessionLocal()
 try:
-    session_id = st.session_state.session_id
-    cart_items = db.query(Cart).filter(Cart.session_id == session_id).all()
+    if not st.session_state.get('user_id'):
+        st.warning("⚠️ Please login from the shop page to view your cart.")
+        st.stop()
+        
+    user_id = st.session_state.user_id
+    cart_items = db.query(Cart).filter(Cart.user_id == user_id).all()
     
     if not cart_items:
         st.info(t('empty_cart'))
@@ -26,10 +30,10 @@ try:
                 img_url = product.image_url if product.image_url else f"https://picsum.photos/seed/{product.id}/100/100"
                 if not img_url.startswith("http"):
                     img_url = f"https://picsum.photos/seed/{product.id}/100/100"
-                st.image(img_url, use_container_width=True)
+                st.image(img_url, width="stretch")
             with c2:
                 st.write(f"**{product.name}**")
-                st.write(f"${product.price}")
+                st.write(f"{product.price:,.0f} VNĐ")
             with c3:
                 new_qty = st.number_input(t('quantity'), min_value=1, value=item.quantity, key=f"qty_{item.id}")
                 if new_qty != item.quantity:
@@ -37,7 +41,7 @@ try:
                     db.commit()
                     st.rerun()
             with c4:
-                st.write(f"**${product.price * item.quantity:.2f}**")
+                st.write(f"**{product.price * item.quantity:,.0f} VNĐ**")
                 if st.button("🗑️ Remove", key=f"rem_{item.id}"):
                     db.delete(item)
                     db.commit()
@@ -46,8 +50,8 @@ try:
             total += product.price * item.quantity
             st.divider()
             
-        st.markdown(f"### {t('total')}: ${total:.2f}")
-        if st.button(t('checkout'), type="primary", use_container_width=True):
+        st.markdown(f"### {t('total')}: {total:,.0f} VNĐ")
+        if st.button(t('checkout'), type="primary", width="stretch"):
             st.switch_page("views/checkout.py")
             
 finally:

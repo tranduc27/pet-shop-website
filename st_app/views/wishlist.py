@@ -8,7 +8,11 @@ st.title(f"❤️ {t('wishlist')}")
 
 db = SessionLocal()
 try:
-    items = db.query(Wishlist).filter_by(session_id=st.session_state.session_id).all()
+    if not st.session_state.get('user_id'):
+        st.warning("⚠️ Please login from the shop page to view your wishlist.")
+        st.stop()
+        
+    items = db.query(Wishlist).filter_by(user_id=st.session_state.user_id).all()
     
     if not items:
         st.info("Your wishlist is empty.")

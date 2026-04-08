@@ -35,10 +35,11 @@ try:
                 p_price = st.number_input("Price", min_value=0.0)
                 p_stock = st.number_input("Stock", min_value=0)
                 p_desc = st.text_area("Description")
+                p_image = st.text_input("Image URL (Optional)", placeholder="https://example.com/image.jpg")
                 p_sale = st.checkbox("Today's Sale?")
                 p_disc = st.number_input("Discount %", min_value=0.0, max_value=100.0)
                 if st.form_submit_button("Add Product"):
-                    new_p = Product(name=p_name, price=p_price, stock=p_stock, description=p_desc, is_today_sale=p_sale, discount_percent=p_disc)
+                    new_p = Product(name=p_name, price=p_price, stock=p_stock, description=p_desc, image_url=p_image, is_today_sale=p_sale, discount_percent=p_disc)
                     db.add(new_p)
                     db.commit()
                     st.success("Product added!")
@@ -47,10 +48,12 @@ try:
         prods = db.query(Product).all()
         if prods:
             df = pd.DataFrame([{
-                'ID': p.id, 'Name': p.name, 'Price': p.price, 'Stock': p.stock if p.stock is not None else 0, 'On Sale': p.is_today_sale, 'Discount %': p.discount_percent if p.discount_percent is not None else 0.0
+                'ID': p.id, 'Name': p.name, 'Price': p.price, 'Stock': p.stock if p.stock is not None else 0, 
+                'Image URL': p.image_url if p.image_url else '',
+                'On Sale': p.is_today_sale, 'Discount %': p.discount_percent if p.discount_percent is not None else 0.0
             } for p in prods])
             
-            edited_df = st.data_editor(df, use_container_width=True, disabled=["ID"], key="product_editor")
+            edited_df = st.data_editor(df, width="stretch", disabled=["ID"], key="product_editor")
             
             if st.button("Save Changes", type="primary"):
                 for index, row in edited_df.iterrows():
@@ -60,6 +63,7 @@ try:
                         p.name = row['Name']
                         p.price = float(row['Price'])
                         p.stock = int(row['Stock'])
+                        p.image_url = row['Image URL'] if row['Image URL'] else None
                         p.is_today_sale = bool(row['On Sale'])
                         p.discount_percent = float(row['Discount %'])
                 db.commit()
@@ -73,7 +77,7 @@ try:
             odf = pd.DataFrame([{
                 'ID': o.id, 'Status': o.status, 'Guest Name': o.guest_name, 'Total': o.total_price, 'Date': o.created_at
             } for o in orders])
-            st.dataframe(odf, use_container_width=True)
+            st.dataframe(odf, width="stretch")
         else:
             st.info("No orders yet.")
             
@@ -86,7 +90,7 @@ try:
                 'Type': f"Product #{r.product_id}" if r.product_id else "Shop",
                 'Comment': r.comment, 'Date': r.created_at.strftime("%Y-%m-%d %H:%M") if r.created_at else ""
             } for r in reviews])
-            st.dataframe(rev_df, use_container_width=True)
+            st.dataframe(rev_df, width="stretch")
             
             with st.expander("Delete a Review"):
                 with st.form("delete_review_form"):
