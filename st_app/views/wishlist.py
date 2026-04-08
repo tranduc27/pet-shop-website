@@ -28,9 +28,16 @@ try:
                      img_url = f"https://picsum.photos/seed/{product.id}/400/400"
                 st.image(img_url)
                 st.write(f"**{product.name}**")
-                if st.button("Remove", key=f"wl_rem_{item.id}"):
-                    db.delete(item)
-                    db.commit()
-                    st.rerun()
+                
+                c1, c2 = st.columns(2)
+                with c1:
+                    if st.button("View Details", key=f"wl_view_{item.id}", type="primary", use_container_width=True):
+                        st.session_state.selected_product_id = product.id
+                        st.switch_page("views/shop.py")
+                with c2:
+                    if st.button("Xóa", key=f"wl_rem_{item.id}", use_container_width=True):
+                        db.delete(item)
+                        db.commit()
+                        st.rerun()
 finally:
     db.close()

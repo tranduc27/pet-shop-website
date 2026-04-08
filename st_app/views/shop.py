@@ -10,7 +10,11 @@ from st_app.utils import t
 
 st.title(f"🛍️ {t('shop')}")
 
-
+scol1, scol2 = st.columns([2, 1])
+with scol1:
+    search_query = st.text_input("🔍 Tìm kiếm sản phẩm...", "")
+with scol2:
+    sort_by = st.selectbox("Sắp xếp theo", ["Mặc định", "Giá: Thấp đến cao", "Giá: Cao đến thấp", "Tên: A-Z", "Tên: Z-A"])
 
 @st.dialog("Product Details", width="large")
 def product_detail_modal(product):
@@ -40,7 +44,6 @@ def product_detail_modal(product):
             st.write(f"**{t('price')}:** {product.price:,.0f} VNĐ")
         st.write(product.description or "No description available.")
         
-        size = st.selectbox(t('size'), product.size.split(',') if product.size else ["Default"])
         stock_limit = max(1, product.stock) if product.stock is not None else 100
         qty = st.number_input(t('quantity'), min_value=1, max_value=stock_limit, value=1)
         
@@ -112,7 +115,19 @@ def product_detail_modal(product):
 
 db = SessionLocal()
 try:
-    products = db.query(Product).all()
+    products_query = db.query(Product)
+    if search_query:
+        products_query = products_query.filter(Product.name.ilike(f"%{search_query}%"))
+    products = products_query.all()
+    
+    if sort_by == "Giá: Thấp đến cao":
+        products.sort(key=lambda x: x.price * (1 - (x.discount_percent or 0) / 100) if x.is_today_sale else x.price)
+    elif sort_by == "Giá: Cao đến thấp":
+        products.sort(key=lambda x: x.price * (1 - (x.discount_percent or 0) / 100) if x.is_today_sale else x.price, reverse=True)
+    elif sort_by == "Tên: A-Z":
+        products.sort(key=lambda x: x.name.lower())
+    elif sort_by == "Tên: Z-A":
+        products.sort(key=lambda x: x.name.lower(), reverse=True)
     
     # If a product was selected from home page
     if 'selected_product_id' in st.session_state:

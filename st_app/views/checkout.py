@@ -22,7 +22,11 @@ try:
         st.warning("⚠️ Please login from the shop page to proceed to checkout.")
         st.stop()
 
-    cart_items = db.query(Cart).filter_by(user_id=st.session_state.user_id).all()
+    cart_items_all = db.query(Cart).filter_by(user_id=st.session_state.user_id).all()
+    if 'checkout_item_ids' in st.session_state:
+        cart_items = [item for item in cart_items_all if item.id in st.session_state.checkout_item_ids]
+    else:
+        cart_items = cart_items_all
     if not cart_items:
         st.info("🛒 Your cart is empty. Please add some products to proceed with checkout.")
         if st.button("Return to Shop"):

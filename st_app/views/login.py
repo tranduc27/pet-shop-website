@@ -32,9 +32,11 @@ with tab2:
     with st.form("signup_form"):
         su = st.text_input("Choose a Username", key="su")
         sp = st.text_input("Choose a Password", type="password", key="sp")
+        se = st.text_input("Gmail (Optional)", key="se", placeholder="example@gmail.com")
+        sphone = st.text_input("Phone Number", key="sphone", placeholder="0123...")
         if st.form_submit_button("Sign Up & Login", type="primary", width="stretch"):
-            if not su or not sp:
-                st.error("Please fill in both fields.")
+            if not su or not sp or not sphone:
+                st.error("Please fill in Username, Password and Phone Number.")
             else:
                 db_l = SessionLocal()
                 try:
@@ -42,7 +44,7 @@ with tab2:
                     if user_exist:
                         st.error("Username already exists. Please choose another.")
                     else:
-                        new_u = User(username=su, password=hash_password(sp))
+                        new_u = User(username=su, password=hash_password(sp), email=se, phone=sphone)
                         db_l.add(new_u)
                         db_l.commit()
                         st.session_state.user_id = new_u.id

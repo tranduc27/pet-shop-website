@@ -25,7 +25,9 @@ try:
             product = db.query(Product).filter(Product.id == item.product_id).first()
             if not product: continue
             
-            c1, c2, c3, c4 = st.columns([1, 2, 1, 1])
+            c0, c1, c2, c3, c4 = st.columns([0.5, 1, 2, 1, 1])
+            with c0:
+                is_selected = st.checkbox("", value=st.session_state.get(f"sel_{item.id}", True), key=f"sel_{item.id}")
             with c1:
                 img_url = product.image_url if product.image_url else f"https://picsum.photos/seed/{product.id}/100/100"
                 if not img_url.startswith("http"):
@@ -47,12 +49,18 @@ try:
                     db.commit()
                     st.rerun()
             
-            total += product.price * item.quantity
+            if is_selected:
+                total += product.price * item.quantity
             st.divider()
             
         st.markdown(f"### {t('total')}: {total:,.0f} VNĐ")
         if st.button(t('checkout'), type="primary", width="stretch"):
-            st.switch_page("views/checkout.py")
+            selected_ids = [item.id for item in cart_items if st.session_state.get(f"sel_{item.id}", True)]
+            if not selected_ids:
+                st.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán.")
+            else:
+                st.session_state.checkout_item_ids = selected_ids
+                st.switch_page("views/checkout.py")
             
 finally:
     db.close()

@@ -4,6 +4,8 @@ from app.models.product import Product
 from app.models.order import Order
 from app.models.review import Review
 import pandas as pd
+import cloudinary
+import cloudinary.uploader
 
 st.title("⚙️ Admin Panel")
 
@@ -36,10 +38,26 @@ try:
                 p_stock = st.number_input("Stock", min_value=0)
                 p_desc = st.text_area("Description")
                 p_image = st.text_input("Image URL (Optional)", placeholder="https://example.com/image.jpg")
+                p_image_file = st.file_uploader("Or Upload Image to Cloudinary", type=["png", "jpg", "jpeg", "webp"])
                 p_sale = st.checkbox("Today's Sale?")
                 p_disc = st.number_input("Discount %", min_value=0.0, max_value=100.0)
                 if st.form_submit_button("Add Product"):
-                    new_p = Product(name=p_name, price=p_price, stock=p_stock, description=p_desc, image_url=p_image, is_today_sale=p_sale, discount_percent=p_disc)
+                    final_image_url = p_image
+                    if p_image_file is not None:
+                        try:
+                            if "cloudinary" in st.secrets:
+                                cloudinary.config(
+                                  cloud_name = st.secrets["cloudinary"]["cloud_name"],
+                                  api_key = st.secrets["cloudinary"]["api_key"],
+                                  api_secret = st.secrets["cloudinary"]["api_secret"]
+                                )
+                            response = cloudinary.uploader.upload(p_image_file)
+                            final_image_url = response['secure_url']
+                        except Exception as e:
+                            st.error(f"Lỗi tải ảnh lên Cloudinary: {e}")
+                            st.stop()
+                    
+                    new_p = Product(name=p_name, price=p_price, stock=p_stock, description=p_desc, image_url=final_image_url, is_today_sale=p_sale, discount_percent=p_disc)
                     db.add(new_p)
                     db.commit()
                     st.success("Product added!")
@@ -48,7 +66,7 @@ try:
         prods = db.query(Product).all()
         if prods:
             df = pd.DataFrame([{
-                'ID': p.id, 'Name': p.name, 'Price': p.price, 'Stock': p.stock if p.stock is not None else 0, 
+                'ID': p.id, 'Name': p.name, 'Description': p.description if p.description else '', 'Price': p.price, 'Stock': p.stock if p.stock is not None else 0, 
                 'Image URL': p.image_url if p.image_url else '',
                 'On Sale': p.is_today_sale, 'Discount %': p.discount_percent if p.discount_percent is not None else 0.0
             } for p in prods])
@@ -61,6 +79,7 @@ try:
                     p = db.query(Product).filter_by(id=p_id).first()
                     if p:
                         p.name = row['Name']
+                        p.description = row.get('Description', '')
                         p.price = float(row['Price'])
                         p.stock = int(row['Stock'])
                         p.image_url = row['Image URL'] if row['Image URL'] else None
@@ -69,7 +88,20 @@ try:
                 db.commit()
                 st.success("Successfully updated products!")
                 st.rerun()
-            
+                
+            with st.expander("Delete a Product"):
+                with st.form("delete_product_form"):
+                    prod_id_to_delete = st.number_input("Product ID to delete", min_value=0, step=1)
+                    if st.form_submit_button("Delete", type="primary"):
+                        prod_to_del = db.query(Product).filter_by(id=prod_id_to_delete).first()
+                        if prod_to_del:
+                            db.delete(prod_to_del)
+                            db.commit()
+                            st.success(f"Product #{prod_id_to_delete} deleted successfully!")
+                            st.rerun()
+                        else:
+                            st.error("Product not found.")
+                            
     with tab2:
         st.subheader("View Orders")
         orders = db.query(Order).all()
