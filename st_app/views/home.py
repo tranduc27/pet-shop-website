@@ -49,12 +49,12 @@ try:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                if st.button(f"View ##{prod.id}", key=f"view_sale_{prod.id}", width="stretch"):
+                if st.button(t('view_detail'), key=f"view_sale_{prod.id}", use_container_width=True):
                     st.session_state.selected_product_id = prod.id
                     st.switch_page("views/shop.py")
 
     st.divider()
-    st.subheader("🌟 Customer Testimonials")
+    st.subheader(f"🌟 {t('customer_testimonials')}")
     reviews = db.query(Review).filter(Review.product_id == None).order_by(Review.created_at.desc()).limit(5).all()
     if reviews:
         for r in reviews:
@@ -63,9 +63,9 @@ try:
             st.caption(f"{r.created_at.strftime('%Y-%m-%d')} - Verified")
             st.markdown("---")
     else:
-        st.info("No shop reviews yet. Be the first!")
+        st.info(t('no_reviews'))
         
-    with st.expander("📝 Leave a Review for Pet Shop Premium"):
+    with st.expander(f"📝 {t('leave_review')}"):
         with st.form("shop_review"):
             rev_name = st.text_input("Your Name", "Guest")
             rev_rating = st.slider("Rating", 1, 5, 5)
@@ -76,6 +76,20 @@ try:
                 db.commit()
                 st.success("Thank you for your feedback!")
                 st.rerun()
+
+    st.markdown("""
+        <div style='background-color: var(--secondary-background-color); padding: 40px 20px; border-radius: 15px; margin-top: 40px; text-align: center; border: 1px solid rgba(128, 128, 128, 0.2);'>
+            <h3 style='margin-bottom: 20px; font-weight: 600;'>🐾 Pet Shop Premium</h3>
+            <div style='color: #666; font-size: 16px; line-height: 1.8;'>
+                <p style='margin: 0;'><strong>📍 Địa chỉ:</strong> Quận Cầu Giấy, Hà Nội <em>(Địa chỉ dự kiến)</em></p>
+                <p style='margin: 0;'><strong>📞 Hotline/Zalo:</strong> <a href='https://zalo.me/0375318910' target='_blank' style='color: inherit; text-decoration: none;'>0375 318 910</a></p>
+                <p style='margin: 0;'><strong>💬 Facebook:</strong> <a href='https://www.facebook.com/ductrann.27/' target='_blank' style='color: #0084FF; text-decoration: none;'>@ductrann.27</a></p>
+            </div>
+            <div style='margin-top: 30px; font-size: 14px; color: #aaa;'>
+                © 2026 Pet Shop. All rights reserved.
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
 finally:
     db.close()

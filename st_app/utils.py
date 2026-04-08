@@ -22,7 +22,11 @@ translations = {
         'submit_order': 'Submit Order',
         'guest_checkout': 'Guest Checkout',
         'admin_manage': 'Manage Products',
-        'contact_us': 'Contact Us'
+        'contact_us': 'Contact Us',
+        'customer_testimonials': 'Customer Reviews',
+        'no_reviews': 'No shop reviews yet. Be the first!',
+        'leave_review': 'Leave a Review for Pet Shop',
+        'view_detail': 'View Detail'
     },
     'Vietnamese': {
         'home': 'Trang chủ',
@@ -41,26 +45,11 @@ translations = {
         'submit_order': 'Đặt hàng',
         'guest_checkout': 'Thanh toán khách',
         'admin_manage': 'Quản lý Sản phẩm',
-        'contact_us': 'Liên hệ với chúng tôi'
-    },
-    'Arabic': {
-        'home': 'الرئيسية',
-        'shop': 'المتجر',
-        'cart': 'عربة التسوق',
-        'wishlist': 'المفضلة',
-        'checkout': 'الدفع',
-        'admin': 'لوحة الإدارة',
-        'add_to_cart': 'أضف إلى السلة',
-        'today_sales': 'عروض اليوم',
-        'price': 'السعر',
-        'size': 'الحجم',
-        'quantity': 'الكمية',
-        'empty_cart': 'عربة التسوق فارغة',
-        'total': 'المجموع',
-        'submit_order': 'إرسال الطلب',
-        'guest_checkout': 'دفع الزائر',
-        'admin_manage': 'إدارة المنتجات',
-        'contact_us': 'اتصل بنا'
+        'contact_us': 'Liên hệ với chúng tôi',
+        'customer_testimonials': 'Đánh giá từ Khách hàng',
+        'no_reviews': 'Chưa có đánh giá nào. Hãy là người đầu tiên!',
+        'leave_review': 'Viết Đánh giá cho Pet Shop',
+        'view_detail': 'Xem chi tiết'
     }
 }
 
@@ -184,8 +173,7 @@ def inject_custom_css():
     </style>
     
     <div class="floating-icons">
-        <a href="tel:+84988888888" class="contact-btn btn-sms" title="Call Us" target="_blank" rel="noopener noreferrer">📱</a>
-        <a href="https://www.messenger.com/t/100000000000000/" class="contact-btn btn-mess" title="Messenger" target="_blank" rel="noopener noreferrer">💬</a>
-        <a href="https://zalo.me/0988888888" class="contact-btn btn-zalo" title="Zalo" target="_blank" rel="noopener noreferrer">Z</a>
+        <a href="https://www.facebook.com/ductrann.27/" class="contact-btn btn-mess" title="Messenger" target="_blank" rel="noopener noreferrer">💬</a>
+        <a href="https://zalo.me/0375318910" class="contact-btn btn-zalo" title="Zalo" target="_blank" rel="noopener noreferrer">Z</a>
     </div>
     """, unsafe_allow_html=True)

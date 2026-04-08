@@ -88,7 +88,7 @@ with st.sidebar:
         st.page_link(login_page, label="Login / Sign Up", icon="🔐")
 
     st.divider()
-    lang_choice = st.selectbox("🌐 Language", ["English", "Vietnamese", "Arabic"], index=["English", "Vietnamese", "Arabic"].index(st.session_state.lang))
+    lang_choice = st.selectbox("🌐 Language", ["English", "Vietnamese"], index=["English", "Vietnamese"].index(st.session_state.lang))
     if lang_choice != st.session_state.lang:
         st.session_state.lang = lang_choice
         st.rerun()
