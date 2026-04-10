@@ -10,10 +10,19 @@ from st_app.utils import t
 
 st.title(f"🛍️ {t('shop')}")
 
-scol1, scol2 = st.columns([2, 1])
+db_l = SessionLocal()
+try:
+    cats = [c[0] for c in db_l.query(Product.category).distinct().all() if c[0]]
+finally:
+    db_l.close()
+categories = ["Tất cả"] + sorted(cats)
+
+scol1, scol2, scol3 = st.columns([2, 1, 1])
 with scol1:
     search_query = st.text_input("🔍 Tìm kiếm sản phẩm...", "")
 with scol2:
+    category_filter = st.selectbox("Danh mục", categories)
+with scol3:
     sort_by = st.selectbox("Sắp xếp theo", ["Mặc định", "Giá: Thấp đến cao", "Giá: Cao đến thấp", "Tên: A-Z", "Tên: Z-A"])
 
 @st.dialog("Product Details", width="large")
@@ -118,6 +127,8 @@ try:
     products_query = db.query(Product)
     if search_query:
         products_query = products_query.filter(Product.name.ilike(f"%{search_query}%"))
+    if category_filter != "Tất cả":
+        products_query = products_query.filter(Product.category == category_filter)
     products = products_query.all()
     
     if sort_by == "Giá: Thấp đến cao":

@@ -56,11 +56,12 @@ cart_page = st.Page("views/cart.py", title=cart_title, icon="🛒")
 wishlist_page = st.Page("views/wishlist.py", title=t("wishlist"), icon="❤️")
 checkout_page = st.Page("views/checkout.py", title=t("checkout"), icon="💳")
 admin_page = st.Page("views/admin.py", title=t("admin"), icon="⚙️")
+profile_page = st.Page("views/profile.py", title="My Profile", icon="👤")
 
 login_page = st.Page("views/login.py", title="Login / Sign Up", icon="🔐")
 
 pg = st.navigation(
-    [home_page, shop_page, cart_page, wishlist_page, checkout_page, admin_page, login_page], 
+    [home_page, shop_page, cart_page, wishlist_page, checkout_page, admin_page, profile_page, login_page], 
     position="hidden"
 )
 
@@ -79,7 +80,7 @@ with st.sidebar:
     
     st.divider()
     if st.session_state.get("user_id"):
-        st.markdown(f"👤 **{st.session_state.username}**")
+        st.page_link(profile_page, label=f"My Profile ({st.session_state.username})")
         if st.button("Logout", width="stretch"):
             del st.session_state.user_id
             del st.session_state.username
