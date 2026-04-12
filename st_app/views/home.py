@@ -39,10 +39,14 @@ try:
                 else:
                     price_html = f"{prod.price:,.0f} VNĐ"
                 
+                out_of_stock_badge = ""
+                if prod.stock is not None and prod.stock <= 0:
+                    out_of_stock_badge = "<div style='position:absolute; top:10px; left:10px; background-color:#ff4757; color:white; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold; z-index:10;'>Hết hàng</div>"
+                
                 # HTML card rendering for beautiful UI
                 st.markdown(f"""
                 <div style="position: relative;" class="product-card">
-                    <div class="discount-badge">-{int(disc_p)}%</div>
+                    {out_of_stock_badge}<div class="discount-badge">-{int(disc_p)}%</div>
                     <img src="{img_url}" class="product-image" />
                     <h4 style="margin-top: 15px;">{prod.name}</h4>
                     <p style="color: #888; font-size: 14px;">{price_html}</p>

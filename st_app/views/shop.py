@@ -53,12 +53,18 @@ def product_detail_modal(product):
             st.write(f"**{t('price')}:** {product.price:,.0f} VNĐ")
         st.write(product.description or "No description available.")
         
-        stock_limit = max(1, product.stock) if product.stock is not None else 100
-        qty = st.number_input(t('quantity'), min_value=1, max_value=stock_limit, value=1)
+        stock_limit = int(max(1, product.stock)) if product.stock is not None else 100
+        
+        out_of_stock = (product.stock is not None and product.stock <= 0)
+        if out_of_stock:
+            st.error("Sản phẩm đã hết hàng!")
+            qty = 0
+        else:
+            qty = st.number_input(t('quantity'), min_value=1, max_value=stock_limit, value=1)
         
         c1, c2 = st.columns(2)
         with c1:
-            if st.button(t('add_to_cart'), width="stretch", type="primary"):
+            if st.button(t('add_to_cart'), width="stretch", type="primary", disabled=out_of_stock):
                 if not st.session_state.get("user_id"):
                     st.switch_page("views/login.py")
                 else:
@@ -163,9 +169,13 @@ try:
             else:
                 price_html = f"{prod.price:,.0f} VNĐ"
             
+            out_of_stock_badge = ""
+            if prod.stock is not None and prod.stock <= 0:
+                out_of_stock_badge = "<div style='position:absolute; top:10px; left:10px; background-color:#ff4757; color:white; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold; z-index:10;'>Hết hàng</div>"
+            
             st.markdown(f"""
-            <div class="product-card">
-                <img src="{img_url}" class="product-image" />
+            <div style="position: relative;" class="product-card">
+                {out_of_stock_badge}<img src="{img_url}" class="product-image" />
                 <h4 style="margin-top: 15px;">{prod.name}</h4>
                 <p style="color: #888; font-size: 14px;">{price_html}</p>
             </div>
