@@ -36,7 +36,7 @@ def product_detail_modal(product):
     with cols[1]:
         st.header(product.name)
         
-        # Calculate rating
+        # Tính điểm đánh giá
         db = SessionLocal()
         try:
             reviews = db.query(Review).filter(Review.product_id == product.id).all()
@@ -147,7 +147,7 @@ try:
     elif sort_by == "Tên: Z-A":
         products.sort(key=lambda x: x.name.lower(), reverse=True)
     
-    # If a product was selected from home page
+    # Nếu một sản phẩm được chọn từ trang chủ
     if 'selected_product_id' in st.session_state:
         selected_id = st.session_state.selected_product_id
         del st.session_state.selected_product_id
@@ -158,7 +158,7 @@ try:
     cols = st.columns(3)
     for i, prod in enumerate(products):
         with cols[i % 3]:
-            # Simple card
+            # Thẻ đơn giản
             img_url = prod.image_url if prod.image_url else f"https://picsum.photos/seed/{prod.id}/400/400"
             if not img_url.startswith("http"):
                  img_url = f"https://picsum.photos/seed/{prod.id}/400/400"

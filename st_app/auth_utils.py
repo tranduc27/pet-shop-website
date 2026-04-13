@@ -9,5 +9,5 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
         return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
     except ValueError:
-        # Fallback if there are unhashed passwords in the database for testing
+        # Fallback (Dự phòng) trong trường hợp mật khẩu chưa được băm trong database để kiểm thử
         return plain_password == hashed_password

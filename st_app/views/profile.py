@@ -21,7 +21,7 @@ try:
         st.error("User not found.")
         st.stop()
 
-    # Create layout columns
+    # Tạo các cột bố cục
     col1, col2 = st.columns([1, 2])
 
     with col1:
@@ -39,7 +39,7 @@ try:
             st.info("You haven't placed any orders yet.")
         else:
             for order in orders:
-                # Format order title
+                # Định dạng tiêu đề đơn hàng
                 dt_str = order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else "Unknown Date"
                 title = f"Order #{order.id} - {dt_str} | Total: ${order.total_price:.2f} | Status: {order.status.capitalize()}"
                 
@@ -48,7 +48,7 @@ try:
                     st.write(f"**Delivery Phone:** {order.guest_phone or user.phone or 'N/A'}")
                     st.write(f"**Delivery Address:** {order.guest_address or 'N/A'}")
                     
-                    # Fetch items
+                    # Lấy danh sách sản phẩm
                     items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
                     if items:
                         item_data = []

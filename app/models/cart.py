@@ -6,8 +6,8 @@ class Cart(Base):
     __tablename__ = "cart"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # For logged in users
-    session_id = Column(String(100), nullable=True, index=True) # For guest users
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Dành cho người dùng đã đăng nhập
+    session_id = Column(String(100), nullable=True, index=True) # Dành cho người dùng khách (chưa đăng nhập)
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer, default=1)
 

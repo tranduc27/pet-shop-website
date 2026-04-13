@@ -130,7 +130,7 @@ with tab3:
                         if 'reset_user_id' in st.session_state: del st.session_state.reset_user_id
                         if 'dev_otp_msg' in st.session_state: del st.session_state.dev_otp_msg
                         if 'otp_created_at' in st.session_state: del st.session_state.otp_created_at
-                        # Don't rerun intentionally so they can read the success message and click Login instead
+                        # Cố tình không chạy lại để họ có thể đọc thông báo thành công và nhấp vào Đăng nhập
                 finally:
                     db_l.close()
             else:

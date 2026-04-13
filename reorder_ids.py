@@ -6,14 +6,14 @@ def reorder_ids():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
-    # Disable foreign keys temporarily for safety just in case
+    # Tạm thời vô hiệu hóa khóa ngoại để đảm bảo an toàn
     cursor.execute("PRAGMA foreign_keys = OFF;")
     
-    # Get all product IDs ordered ascending
+    # Lấy tất cả ID sản phẩm theo thứ tự tăng dần
     cursor.execute("SELECT id FROM products ORDER BY id ASC")
     rows = cursor.fetchall()
     
-    # Re-assign IDs explicitly from 1
+    # Gán lại ID bắt đầu từ 1
     new_id = 1
     for row in rows:
         old_id = row[0]

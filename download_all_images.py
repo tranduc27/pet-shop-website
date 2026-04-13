@@ -9,21 +9,21 @@ os.makedirs(img_dir, exist_ok=True)
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
-# Get all non-null image_urls
+# Lấy tất cả các URL hình ảnh khác null
 cursor.execute("SELECT image_url FROM products WHERE image_url IS NOT NULL")
 rows = cursor.fetchall()
 
 count = 0
 for row in rows:
     image_url = row[0]
-    # image_url format: /static/images/filename.jpg
+    # định dạng URL hình ảnh: /static/images/filename.jpg
     if not image_url.startswith("/static/images/"):
         continue
         
     filename = image_url.split("/")[-1]
     file_path = os.path.join(img_dir, filename)
     
-    # Check if already downloaded
+    # Kiểm tra xem đã tải xuống chưa
     if os.path.exists(file_path):
         continue
         

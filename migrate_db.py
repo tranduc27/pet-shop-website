@@ -4,14 +4,14 @@ def migrate():
     conn = sqlite3.connect("pet_shop.db")
     cursor = conn.cursor()
     
-    # helper for checking if column exists
+    # hàm hỗ trợ để kiểm tra xem cột có tồn tại không
     def column_exists(table, column):
         cursor.execute(f"PRAGMA table_info({table})")
         columns = [row[1] for row in cursor.fetchall()]
         return column in columns
         
     try:
-        # Product changes
+        # Các thay đổi của Sản phẩm
         if not column_exists("products", "size"):
             cursor.execute("ALTER TABLE products ADD COLUMN size VARCHAR(50) DEFAULT NULL")
             print("Added size to products")
@@ -22,12 +22,12 @@ def migrate():
             cursor.execute("ALTER TABLE products ADD COLUMN is_today_sale BOOLEAN DEFAULT 0")
             print("Added is_today_sale to products")
             
-        # Cart changes    
+        # Các thay đổi của Giỏ hàng    
         if not column_exists("cart", "session_id"):
             cursor.execute("ALTER TABLE cart ADD COLUMN session_id VARCHAR(100) DEFAULT NULL")
             print("Added session_id to cart")
 
-        # Order changes
+        # Các thay đổi của Đơn hàng
         if not column_exists("orders", "session_id"):
             cursor.execute("ALTER TABLE orders ADD COLUMN session_id VARCHAR(100) DEFAULT NULL")
             print("Added session_id to orders")

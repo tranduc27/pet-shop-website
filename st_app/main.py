@@ -3,7 +3,7 @@ import uuid
 import sys
 import os
 
-# Add parent dir to path so we can import app modules
+# Thêm thư mục cha vào đường dẫn để có thể import các module của ứng dụng
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from st_app.utils import inject_custom_css, t, get_cart_count
@@ -15,10 +15,10 @@ if 'session_id' not in st.session_state:
 if 'lang' not in st.session_state:
     st.session_state.lang = 'English'
 
-# CSS and Contact Icons
+# CSS và biểu tượng liên hệ
 inject_custom_css()
 
-# Big floating animated welcome banner
+# Banner chào mừng khổ lớn dạng nổi có hiệu ứng hoạt hình
 if st.session_state.get("user_id"):
     st.markdown(f"""
     <style>
@@ -68,7 +68,7 @@ pg = st.navigation(
 with st.sidebar:
     st.image("https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400", width="stretch")
     
-    # Custom Sidebar Navigation (Omitting Admin)
+    # Điều hướng thanh bên (Sidebar) tùy chỉnh (Bỏ qua cấu hình Admin)
     st.markdown(f"**Main**")
     st.page_link(home_page, label=t("home"), icon="🏠")
     st.page_link(shop_page, label=t("shop"), icon="🛍️")

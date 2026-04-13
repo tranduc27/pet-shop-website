@@ -9,7 +9,7 @@ import cloudinary.uploader
 
 st.title("⚙️ Admin Panel")
 
-# Simple protection
+# Bảo vệ cơ bản
 if "admin_logged_in" not in st.session_state:
     st.session_state.admin_logged_in = False
 
@@ -18,7 +18,7 @@ if not st.session_state.admin_logged_in:
         username = st.text_input("Username")
         pwd = st.text_input("Password", type="password")
         if st.form_submit_button("Login"):
-            if username == "admin" and pwd == "admin":  # simple hardcoded for demo
+            if username == "admin" and pwd == "admin":  # gán cứng đơn giản cho bản demo
                 st.session_state.admin_logged_in = True
                 st.rerun()
             else:

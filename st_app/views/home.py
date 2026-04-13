@@ -6,7 +6,7 @@ from st_app.utils import t
 
 st.title(f"🐶 {t('home')}")
 
-# Hero Section
+# Phần hiển thị chính (Hero Section)
 st.markdown("""
 <div style='background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=1200");
 background-size: cover; background-position: center; border-radius: 20px; padding: 60px; text-align: center; color: white;'>
@@ -20,7 +20,7 @@ st.subheader(f"🔥 {t('today_sales')}")
 
 db = SessionLocal()
 try:
-    # Get products on sale
+    # Lấy các sản phẩm đang giảm giá
     sales = db.query(Product).filter(Product.is_today_sale == True).all()
     if not sales:
         st.info("No sales today. Check back tomorrow!")
@@ -43,7 +43,7 @@ try:
                 if prod.stock is not None and prod.stock <= 0:
                     out_of_stock_badge = "<div style='position:absolute; top:10px; left:10px; background-color:#ff4757; color:white; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold; z-index:10;'>Hết hàng</div>"
                 
-                # HTML card rendering for beautiful UI
+                # Render thẻ HTML để có giao diện đẹp
                 st.markdown(f"""
                 <div style="position: relative;" class="product-card">
                     {out_of_stock_badge}<div class="discount-badge">-{int(disc_p)}%</div>

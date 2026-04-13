@@ -3,7 +3,7 @@ from app.database import SessionLocal
 from app.models.cart import Cart
 import uuid
 
-# Translations
+# Các bản dịch (Translations)
 translations = {
     'English': {
         'home': 'Home',

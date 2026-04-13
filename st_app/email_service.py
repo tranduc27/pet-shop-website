@@ -15,7 +15,7 @@ def send_otp_email(to_email: str, otp: str) -> bool:
     """
     try:
         if 'email' not in st.secrets:
-            # Fallback for dev mode
+            # Fallback (Dự phòng) cho chế độ dev
             print(f"\n[DEV MODE] Mật khẩu OTP của bạn là: {otp}\n")
             st.session_state.dev_otp_msg = f"DEV MODE (No Streamlit secrets found): Your OTP is **{otp}**"
             return True
@@ -61,6 +61,6 @@ def send_otp_email(to_email: str, otp: str) -> bool:
     except Exception as e:
         print(f"Error sending email: {e}")
         st.error(f"Failed to send email: {str(e)}")
-        # Print OTP to terminal just in case
+        # In OTP ra terminal để phòng hờ
         print(f"FAILED TO SEND OTP = {otp}")
         return False

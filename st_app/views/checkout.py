@@ -9,7 +9,7 @@ st.title(f"💳 {t('checkout')}")
 
 db = SessionLocal()
 try:
-    # First check if the order has just been placed
+    # Đầu tiên kiểm tra xem đơn hàng vừa được đặt hay không
     if st.session_state.get('order_placed'):
         st.success("🎉 Order placed successfully! We will contact you soon to confirm your delivery.")
         st.info("Your order is being processed. Thank you for shopping with us!")
@@ -33,7 +33,7 @@ try:
             st.switch_page("views/shop.py")
         st.stop()
         
-    # Calculate totals
+    # Tính toán tổng tiền
     subtotal = sum([(db.query(Product).filter_by(id=item.product_id).first().price * item.quantity) for item in cart_items if db.query(Product).filter_by(id=item.product_id).first()])
     shipping_fee = 30000 if subtotal < 1000000 else 0.00
     total = subtotal + shipping_fee
@@ -78,7 +78,7 @@ try:
             horizontal=False
         )
         
-        # Payment Method Conditional UI
+        # Giao diện người dùng theo phương thức thanh toán
         if payment_method == "Credit/Debit Card":
             st.info("🔒 Secure Card Payment Form")
             cc_name = st.text_input("Cardholder Name", placeholder="TRAN DINH DUC")
@@ -113,14 +113,14 @@ try:
         
         st.markdown("---")
         
-        # Submit Button
+        # Nút xác nhận
         if st.button("✅ Confirm & Place Order", width="stretch", type="primary"):
             if not name or not phone or not address:
                 st.error("⚠️ Please fill in all required delivery information (Name, Phone, Address).")
             elif payment_method == "Credit/Debit Card" and (not cc_name or not cc_num):
                 st.error("⚠️ Please fill in your Credit Card details.")
             else:
-                # Validate stock and reduce it
+                # Kiểm tra kho và giảm số lượng
                 stock_error = False
                 for item in cart_items:
                     prod = db.query(Product).filter_by(id=item.product_id).first()
@@ -137,7 +137,7 @@ try:
                 if stock_error:
                     st.stop()
                     
-                # Deduct stock
+                # Trừ số lượng kho
                 for item in cart_items:
                     prod = db.query(Product).filter_by(id=item.product_id).first()
                     if prod and prod.stock is not None:
@@ -156,7 +156,7 @@ try:
                 )
                 db.add(new_order)
                 
-                # clear cart
+                # xóa giỏ hàng
                 for it in cart_items:
                     db.delete(it)
                 db.commit()
