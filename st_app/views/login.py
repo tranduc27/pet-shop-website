@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 from app.database import SessionLocal
 from app.models.user import User
 from st_app.auth_utils import hash_password, verify_password
@@ -76,6 +77,7 @@ with tab3:
                         st.session_state.reset_otp = otp
                         st.session_state.reset_email = email
                         st.session_state.reset_user_id = user.id
+                        st.session_state.otp_created_at = time.time()
                         if send_otp_email(email, otp):
                             st.session_state.reset_step = 2
                             st.success("OTP sent to your email!")
@@ -85,11 +87,15 @@ with tab3:
 
     elif st.session_state.reset_step == 2:
         st.info(f"An OTP has been sent to {st.session_state.reset_email}")
+        if "dev_otp_msg" in st.session_state:
+            st.warning(st.session_state.dev_otp_msg)
         entered_otp = st.text_input("Enter OTP", key="entered_otp")
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Verify OTP", key="verify_otp_btn"):
-                if entered_otp == st.session_state.reset_otp:
+                if time.time() - st.session_state.get('otp_created_at', 0) > 120:
+                    st.error("Mã OTP đã hết hạn (quá 2 phút). Vui lòng chọn Cancel và yêu cầu gửi mã mới.")
+                elif entered_otp == st.session_state.reset_otp:
                     st.session_state.reset_step = 3
                     st.success("OTP verified!")
                     st.rerun()
@@ -98,6 +104,8 @@ with tab3:
         with col2:
             if st.button("Cancel", key="cancel_otp_btn"):
                 st.session_state.reset_step = 1
+                if 'dev_otp_msg' in st.session_state: del st.session_state.dev_otp_msg
+                if 'otp_created_at' in st.session_state: del st.session_state.otp_created_at
                 st.rerun()
 
     elif st.session_state.reset_step == 3:
@@ -116,6 +124,8 @@ with tab3:
                         if 'reset_otp' in st.session_state: del st.session_state.reset_otp
                         if 'reset_email' in st.session_state: del st.session_state.reset_email
                         if 'reset_user_id' in st.session_state: del st.session_state.reset_user_id
+                        if 'dev_otp_msg' in st.session_state: del st.session_state.dev_otp_msg
+                        if 'otp_created_at' in st.session_state: del st.session_state.otp_created_at
                         # Don't rerun intentionally so they can read the success message and click Login instead
                 finally:
                     db_l.close()

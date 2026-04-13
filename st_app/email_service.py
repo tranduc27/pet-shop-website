@@ -14,10 +14,10 @@ def send_otp_email(to_email: str, otp: str) -> bool:
     Returns True if successful, False if failed.
     """
     try:
-        # Check if secrets exist
         if 'email' not in st.secrets:
             # Fallback for dev mode
-            st.warning(f"DEV MODE (No Streamlit secrets found): Your OTP is **{otp}**")
+            print(f"\n[DEV MODE] Mật khẩu OTP của bạn là: {otp}\n")
+            st.session_state.dev_otp_msg = f"DEV MODE (No Streamlit secrets found): Your OTP is **{otp}**"
             return True
 
         smtp_server = st.secrets["email"].get("smtp_server", "smtp.gmail.com")
@@ -26,7 +26,8 @@ def send_otp_email(to_email: str, otp: str) -> bool:
         sender_password = st.secrets["email"].get("sender_password", "")
 
         if not sender_email or not sender_password or sender_email == "your-email@gmail.com":
-            st.warning(f"DEV MODE (Credentials missing in secrets.toml): Your OTP is **{otp}**")
+            print(f"\n[DEV MODE] OTP của bạn là: {otp}\n")
+            st.session_state.dev_otp_msg = f"DEV MODE (Credentials missing in secrets.toml): Your OTP is **{otp}**"
             return True
 
         msg = MIMEMultipart()

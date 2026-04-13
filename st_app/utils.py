@@ -26,7 +26,8 @@ translations = {
         'customer_testimonials': 'Customer Reviews',
         'no_reviews': 'No shop reviews yet. Be the first!',
         'leave_review': 'Leave a Review for Pet Shop',
-        'view_detail': 'View Detail'
+        'view_detail': 'View Detail',
+        'out_of_stock': 'Out of Stock'
     },
     'Vietnamese': {
         'home': 'Trang chủ',
@@ -49,7 +50,8 @@ translations = {
         'customer_testimonials': 'Đánh giá từ Khách hàng',
         'no_reviews': 'Chưa có đánh giá nào. Hãy là người đầu tiên!',
         'leave_review': 'Viết Đánh giá cho Pet Shop',
-        'view_detail': 'Xem chi tiết'
+        'view_detail': 'Xem chi tiết',
+        'out_of_stock': 'Hết hàng'
     }
 }
 

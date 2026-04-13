@@ -54,11 +54,13 @@ def product_detail_modal(product):
         st.write(product.description or "No description available.")
         
         stock_limit = max(1, product.stock) if product.stock is not None else 100
-        qty = st.number_input(t('quantity'), min_value=1, max_value=stock_limit, value=1)
+        is_out_of_stock = product.stock is not None and product.stock <= 0
+        qty = st.number_input(t('quantity'), min_value=1, max_value=stock_limit, value=1, disabled=is_out_of_stock)
         
         c1, c2 = st.columns(2)
         with c1:
-            if st.button(t('add_to_cart'), width="stretch", type="primary"):
+            btn_label = t('out_of_stock') if is_out_of_stock else t('add_to_cart')
+            if st.button(btn_label, width="stretch", type="primary", disabled=is_out_of_stock):
                 if not st.session_state.get("user_id"):
                     st.switch_page("views/login.py")
                 else:
