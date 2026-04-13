@@ -120,6 +120,29 @@ try:
             elif payment_method == "Credit/Debit Card" and (not cc_name or not cc_num):
                 st.error("⚠️ Please fill in your Credit Card details.")
             else:
+                # Validate stock and reduce it
+                stock_error = False
+                for item in cart_items:
+                    prod = db.query(Product).filter_by(id=item.product_id).first()
+                    if prod and prod.stock is not None:
+                        if prod.stock <= 0:
+                            st.error(f"Sản phẩm '{prod.name}' đã hết hàng vì có khách hàng khác vừa mua hoặc đổi trạng thái. Vui lòng xóa/giảm bớt khỏi giỏ hàng.")
+                            stock_error = True
+                            break
+                        elif prod.stock < item.quantity:
+                            st.error(f"Sản phẩm '{prod.name}' hiện chỉ còn {prod.stock} sản phẩm trong kho. Không đủ đáp ứng số lượng bạn chọn. Vui lòng cập nhật lại giỏ hàng.")
+                            stock_error = True
+                            break
+                            
+                if stock_error:
+                    st.stop()
+                    
+                # Deduct stock
+                for item in cart_items:
+                    prod = db.query(Product).filter_by(id=item.product_id).first()
+                    if prod and prod.stock is not None:
+                        prod.stock -= item.quantity
+                
                 final_address = f"{address}\nEmail: {email}\nNote: {note}\nPayment Method: {payment_method}"
                 
                 new_order = Order(

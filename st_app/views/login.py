@@ -7,7 +7,7 @@ from st_app.email_service import generate_otp, send_otp_email
 
 st.title("🔐 Login / Sign Up")
 
-tab1, tab2, tab3 = st.tabs(["Login", "Sign Up (New Account)", "Forgot Password"])
+tab1, tab2, tab3 = st.tabs(["Login", "Sign Up", "Forgot Password"])
 
 with tab1:
     with st.form("login_form"):
