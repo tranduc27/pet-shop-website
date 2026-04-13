@@ -95,15 +95,19 @@ with tab3:
             if st.button("Verify OTP", key="verify_otp_btn"):
                 if time.time() - st.session_state.get('otp_created_at', 0) > 120:
                     st.error("Mã OTP đã hết hạn (quá 2 phút). Vui lòng chọn Cancel và yêu cầu gửi mã mới.")
-                elif entered_otp == st.session_state.reset_otp:
+                elif 'reset_otp' in st.session_state and entered_otp == st.session_state.reset_otp:
                     st.session_state.reset_step = 3
                     st.success("OTP verified!")
+                    # Vô hiệu hóa OTP ngay sau khi sử dụng thành công
+                    del st.session_state.reset_otp
+                    del st.session_state.otp_created_at
                     st.rerun()
                 else:
                     st.error("Invalid OTP. Please try again.")
         with col2:
             if st.button("Cancel", key="cancel_otp_btn"):
                 st.session_state.reset_step = 1
+                if 'reset_otp' in st.session_state: del st.session_state.reset_otp
                 if 'dev_otp_msg' in st.session_state: del st.session_state.dev_otp_msg
                 if 'otp_created_at' in st.session_state: del st.session_state.otp_created_at
                 st.rerun()
