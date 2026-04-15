@@ -25,7 +25,7 @@ with scol2:
 with scol3:
     sort_by = st.selectbox("Sắp xếp theo", ["Mặc định", "Giá: Thấp đến cao", "Giá: Cao đến thấp", "Tên: A-Z", "Tên: Z-A"])
 
-@st.dialog("Product Details", width="large")
+@st.dialog("Chi tiết sản phẩm", width="large")
 def product_detail_modal(product):
     cols = st.columns(2)
     with cols[0]:
@@ -61,7 +61,7 @@ def product_detail_modal(product):
             st.error("Sản phẩm đã hết hàng!")
             qty = 0
         else:
-            qty = st.number_input(t('quantity'), min_value=1, max_value=stock_limit, value=1)
+            qty = st.number_input(t('số lượng'), min_value=1, max_value=stock_limit, value=1)
         
         c1, c2 = st.columns(2)
         with c1:
@@ -79,12 +79,12 @@ def product_detail_modal(product):
                             new_item = Cart(user_id=user_id, product_id=product.id, quantity=qty)
                             db.add(new_item)
                         db.commit()
-                        st.success("Added to cart!")
+                        st.success("Đã thêm vào giỏ hàng!")
                         st.rerun()
                     finally:
                         db.close()
         with c2:
-            if st.button("❤️ Add to Wishlist", width="stretch"):
+            if st.button("❤️ Thêm vào danh sách yêu thích", width="stretch"):
                 if not st.session_state.get("user_id"):
                     st.switch_page("views/login.py")
                 else:
@@ -96,14 +96,14 @@ def product_detail_modal(product):
                             wl = Wishlist(user_id=user_id, product_id=product.id)
                             db.add(wl)
                             db.commit()
-                            st.success("Added to wishlist!")
+                            st.success("Đã thêm vào danh sách yêu thích!")
                         else:
-                            st.info("Already in wishlist")
+                            st.info("Đã có sẵn trong danh sách yêu thích")
                     finally:
                         db.close()
                     
     st.divider()
-    st.subheader("Customer Reviews")
+    st.subheader("Đánh giá của khách hàng")
     db = SessionLocal()
     try:
         reviews = db.query(Review).filter(Review.product_id == product.id).order_by(Review.created_at.desc()).all()
@@ -113,18 +113,18 @@ def product_detail_modal(product):
                 st.write(f"_{r.comment}_")
                 st.markdown("---")
         else:
-            st.info("No reviews yet for this product.")
+            st.info("Chưa có nhận xét")
             
-        with st.expander("📝 Write a Review"):
+        with st.expander("📝 Viết đánh giá"):
             with st.form(f"review_form_{product.id}"):
-                rev_name = st.text_input("Your Name", "Guest")
-                rev_rating = st.slider("Rating", 1, 5, 5)
-                rev_comment = st.text_area("Your Review")
-                if st.form_submit_button("Submit"):
+                rev_name = st.text_input("Tên", "khách hàng")
+                rev_rating = st.slider("Đánh giá", 1, 5, 5)
+                rev_comment = st.text_area("Đánh giá của bạn")
+                if st.form_submit_button("Gửi"):
                     new_rev = Review(reviewer_name=rev_name, rating=rev_rating, comment=rev_comment, product_id=product.id)
                     db.add(new_rev)
                     db.commit()
-                    st.success("Review added!")
+                    st.success("Đã gửi")
                     st.rerun()
     finally:
         db.close()
@@ -182,7 +182,8 @@ try:
             </div>
             """, unsafe_allow_html=True)
             
-            if st.button(f"View Details", key=f"shop_view_{prod.id}", width="stretch"):
+            if st.button(f"Xem chi tiết", key=f"shop_view_{prod.id}", width="stretch"):
                 product_detail_modal(prod)
 finally:
     db.close()
+S

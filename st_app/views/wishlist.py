@@ -4,18 +4,18 @@ from app.models.wishlist import Wishlist
 from app.models.product import Product
 from st_app.utils import t
 
-st.title(f"❤️ {t('wishlist')}")
+st.title(f"❤️ {t('Danh sách yêu thích')}")
 
 db = SessionLocal()
 try:
     if not st.session_state.get('user_id'):
-        st.warning("⚠️ Please login from the shop page to view your wishlist.")
+        st.warning("⚠️ Vui lòng đăng nhập")
         st.stop()
         
     items = db.query(Wishlist).filter_by(user_id=st.session_state.user_id).all()
     
     if not items:
-        st.info("Your wishlist is empty.")
+        st.info("Danh sách yêu thích đang trống.")
     else:
         cols = st.columns(4)
         for i, item in enumerate(items):
@@ -31,7 +31,7 @@ try:
                 
                 c1, c2 = st.columns(2)
                 with c1:
-                    if st.button("View Details", key=f"wl_view_{item.id}", type="primary", use_container_width=True):
+                    if st.button("Xem chi tiết", key=f"wl_view_{item.id}", type="primary", use_container_width=True):
                         st.session_state.selected_product_id = product.id
                         st.switch_page("views/shop.py")
                 with c2:

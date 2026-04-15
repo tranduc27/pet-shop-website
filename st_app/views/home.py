@@ -4,7 +4,7 @@ from app.models.product import Product
 from app.models.review import Review
 from st_app.utils import t
 
-st.title(f"🐶 {t('home')}")
+st.title(f"🐶 {t('Trang chủ')}")
 
 # Phần hiển thị chính (Hero Section)
 st.markdown("""
@@ -16,14 +16,14 @@ background-size: cover; background-position: center; border-radius: 20px; paddin
 <br>
 """, unsafe_allow_html=True)
 
-st.subheader(f"🔥 {t('today_sales')}")
+st.subheader(f"🔥 {t(' Giảm giá hôm nay')}")
 
 db = SessionLocal()
 try:
     # Lấy các sản phẩm đang giảm giá
     sales = db.query(Product).filter(Product.is_today_sale == True).all()
     if not sales:
-        st.info("No sales today. Check back tomorrow!")
+        st.info("Không có giảm giá ngày hôm nay.")
     else:
         cols = st.columns(4)
         for i, prod in enumerate(sales):
@@ -53,32 +53,32 @@ try:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                if st.button(t('view_detail'), key=f"view_sale_{prod.id}", use_container_width=True):
+                if st.button(t('Xem chi tiết'), key=f"view_sale_{prod.id}", use_container_width=True):
                     st.session_state.selected_product_id = prod.id
                     st.switch_page("views/shop.py")
 
     st.divider()
-    st.subheader(f"🌟 {t('customer_testimonials')}")
+    st.subheader(f"🌟 {t('Đánh giá của khách hàng')}")
     reviews = db.query(Review).filter(Review.product_id == None).order_by(Review.created_at.desc()).limit(5).all()
     if reviews:
         for r in reviews:
             st.markdown(f"**{r.reviewer_name}** {'⭐' * r.rating}")
             st.write(f"_{r.comment}_")
-            st.caption(f"{r.created_at.strftime('%Y-%m-%d')} - Verified")
+            st.caption(f"{r.created_at.strftime('%Y-%m-%d')} - Xác nhận")
             st.markdown("---")
     else:
-        st.info(t('no_reviews'))
+        st.info(t('Chưa có đánh giá'))
         
     with st.expander(f"📝 {t('leave_review')}"):
         with st.form("shop_review"):
-            rev_name = st.text_input("Your Name", "Guest")
-            rev_rating = st.slider("Rating", 1, 5, 5)
-            rev_comment = st.text_area("Your Review")
-            if st.form_submit_button("Submit Review"):
+            rev_name = st.text_input("Tên của bạn", "Khách")
+            rev_rating = st.slider("Đánh giá", 1, 5, 5)
+            rev_comment = st.text_area("Đánh giá của bạn")
+            if st.form_submit_button("Gửi đánh giá"):
                 new_rev = Review(reviewer_name=rev_name, rating=rev_rating, comment=rev_comment, product_id=None)
                 db.add(new_rev)
                 db.commit()
-                st.success("Thank you for your feedback!")
+                st.success("Cảm ơn bạn vì đã đánh giá!")
                 st.rerun()
 
     st.markdown("""

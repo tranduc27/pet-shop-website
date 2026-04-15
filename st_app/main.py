@@ -13,7 +13,7 @@ st.set_page_config(page_title="Pet Shop Premium", page_icon="🐾", layout="wide
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 if 'lang' not in st.session_state:
-    st.session_state.lang = 'English'
+    st.session_state.lang = 'Vietnamese'
 
 # CSS và biểu tượng liên hệ
 inject_custom_css()
@@ -46,19 +46,19 @@ if st.session_state.get("user_id"):
         100% {{ top: -100px; opacity: 0; visibility: hidden; }}
     }}
     </style>
-    <div class="welcome-top-banner">✨ Welcome back, {st.session_state.username}! ✨</div>
+    <div class="welcome-top-banner">✨ Chào mừng trở lại, {st.session_state.username}! ✨</div>
     """, unsafe_allow_html=True)
 
-home_page = st.Page("views/home.py", title=t("home"), icon="🏠", default=True)
-shop_page = st.Page("views/shop.py", title=t("shop"), icon="🛍️")
-cart_title = f"{t('cart')} ({get_cart_count()})"
+home_page = st.Page("views/home.py", title=t("Trang chủ"), icon="🏠", default=True)
+shop_page = st.Page("views/shop.py", title=t("Cửa hàng"), icon="🛍️")
+cart_title = f"{t('Giỏ hàng')} ({get_cart_count()})"
 cart_page = st.Page("views/cart.py", title=cart_title, icon="🛒")
-wishlist_page = st.Page("views/wishlist.py", title=t("wishlist"), icon="❤️")
-checkout_page = st.Page("views/checkout.py", title=t("checkout"), icon="💳")
+wishlist_page = st.Page("views/wishlist.py", title=t("Danh sách yêu thích"), icon="❤️")
+checkout_page = st.Page("views/checkout.py", title=t("Thanh toán"), icon="💳")
 admin_page = st.Page("views/admin.py", title=t("admin"), icon="⚙️")
-profile_page = st.Page("views/profile.py", title="My Profile", icon="👤")
+profile_page = st.Page("views/profile.py", title=t("Tài khoản"), icon="👤")
 
-login_page = st.Page("views/login.py", title="Login / Sign Up", icon="🔐")
+login_page = st.Page("views/login.py", title=t("Đăng nhập/Đăng ký"), icon="🔐")
 
 pg = st.navigation(
     [home_page, shop_page, cart_page, wishlist_page, checkout_page, admin_page, profile_page, login_page], 
@@ -69,27 +69,27 @@ with st.sidebar:
     st.image("https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400", width="stretch")
     
     # Điều hướng thanh bên (Sidebar) tùy chỉnh (Bỏ qua cấu hình Admin)
-    st.markdown(f"**Main**")
-    st.page_link(home_page, label=t("home"), icon="🏠")
-    st.page_link(shop_page, label=t("shop"), icon="🛍️")
+    st.markdown(f"**{t('main_menu')}**")
+    st.page_link(home_page, label=t("Trang chủ"), icon="🏠")
+    st.page_link(shop_page, label=t("Cửa hàng"), icon="🛍️")
     st.page_link(cart_page, label=cart_title, icon="🛒")
-    st.page_link(wishlist_page, label=t("wishlist"), icon="❤️")
+    st.page_link(wishlist_page, label=t("Danh sách yêu thích"), icon="❤️")
     
-    st.markdown(f"**Account**")
-    st.page_link(checkout_page, label=t("checkout"), icon="💳")
+    st.markdown(f"**{t('Tài khoản')}**")
+    st.page_link(checkout_page, label=t("Thanh toán"), icon="💳")
     
     st.divider()
     if st.session_state.get("user_id"):
-        st.page_link(profile_page, label=f"My Profile ({st.session_state.username})")
-        if st.button("Logout", width="stretch"):
+        st.page_link(profile_page, label=f"{t('profile')} ({st.session_state.username})")
+        if st.button(t("logout"), width="stretch"):
             del st.session_state.user_id
             del st.session_state.username
             st.rerun()
     else:
-        st.page_link(login_page, label="Login / Sign Up", icon="🔐")
+        st.page_link(login_page, label=t("login_signup"), icon="🔐")
 
     st.divider()
-    lang_choice = st.selectbox("🌐 Language", ["English", "Vietnamese"], index=["English", "Vietnamese"].index(st.session_state.lang))
+    lang_choice = st.selectbox(f"🌐 {t('language')}", ["English", "Vietnamese"], index=["English", "Vietnamese"].index(st.session_state.lang))
     if lang_choice != st.session_state.lang:
         st.session_state.lang = lang_choice
         st.rerun()

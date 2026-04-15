@@ -27,7 +27,14 @@ translations = {
         'no_reviews': 'No shop reviews yet. Be the first!',
         'leave_review': 'Leave a Review for Pet Shop',
         'view_detail': 'View Detail',
-        'out_of_stock': 'Out of Stock'
+        'out_of_stock': 'Out of Stock',
+        'profile': 'My Profile',
+        'login_signup': 'Login / Sign Up',
+        'main_menu': 'Main',
+        'account': 'Account',
+        'logout': 'Logout',
+        'language': 'Language',
+        'welcome_back': 'Welcome back'
     },
     'Vietnamese': {
         'home': 'Trang chủ',
@@ -51,7 +58,14 @@ translations = {
         'no_reviews': 'Chưa có đánh giá nào. Hãy là người đầu tiên!',
         'leave_review': 'Viết Đánh giá cho Pet Shop',
         'view_detail': 'Xem chi tiết',
-        'out_of_stock': 'Hết hàng'
+        'out_of_stock': 'Hết hàng',
+        'profile': 'Hồ sơ của tôi',
+        'login_signup': 'Đăng nhập / Đăng ký',
+        'main_menu': 'Chính',
+        'account': 'Tài khoản',
+        'logout': 'Đăng xuất',
+        'language': 'Ngôn ngữ',
+        'welcome_back': 'Chào mừng sự trở lại của'
     }
 }
 
@@ -118,7 +132,7 @@ def inject_custom_css():
         border-radius: 10px;
     }
     .discount-badge {
-        background-color: #ff4757;
+        background-color:#ff4757 ;
         color: white;
         padding: 5px 10px;
         border-radius: 20px;

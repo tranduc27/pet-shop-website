@@ -5,17 +5,17 @@ from app.models.user import User
 from st_app.auth_utils import hash_password, verify_password
 from st_app.email_service import generate_otp, send_otp_email
 
-st.title("🔐 Login / Sign Up")
+st.title("🔐 Đăng ký / Đăng nhập")
 
-tab1, tab2, tab3 = st.tabs(["Login", "Sign Up", "Forgot Password"])
+tab1, tab2, tab3 = st.tabs(["Đăng nhập", "Đăng ký", "Quên mật khẩu"])
 
 with tab1:
     with st.form("login_form"):
-        u = st.text_input("Username")
-        p = st.text_input("Password", type="password")
-        if st.form_submit_button("Login", type="primary", width="stretch"):
+        u = st.text_input("Tên đăng nhập")
+        p = st.text_input("Mật khẩu ", type="password")
+        if st.form_submit_button("Đăng nhập", type="primary", width="stretch"):
             if not u or not p:
-                st.error("Please fill in both fields.")
+                st.error("Vui lòng điền đầy đủ")
             else:
                 db_l = SessionLocal()
                 try:
@@ -23,55 +23,55 @@ with tab1:
                     if user_exist and verify_password(p, user_exist.password):
                         st.session_state.user_id = user_exist.id
                         st.session_state.username = user_exist.username
-                        st.success("Logged in successfully! You can now access your cart and wishlist.")
+                        st.success("Đăng nhập thành công")
                         st.switch_page("views/shop.py")
                     else:
-                        st.error("Invalid username or password.")
+                        st.error("Tên đăng nhập hoặc mật khẩu không hợp lệ")
                 finally:
                     db_l.close()
 
 with tab2:
     with st.form("signup_form"):
-        su = st.text_input("Choose a Username", key="su")
-        sp = st.text_input("Choose a Password", type="password", key="sp")
-        se = st.text_input("Gmail (Optional)", key="se", placeholder="example@gmail.com")
-        sphone = st.text_input("Phone Number", key="sphone", placeholder="0123...")
-        if st.form_submit_button("Sign Up & Login", type="primary", width="stretch"):
+        su = st.text_input("Tên đăng nhập", key="su")
+        sp = st.text_input("Mật khẩu", type="password", key="sp")
+        se = st.text_input("Email", key="se", placeholder="example@gmail.com")
+        sphone = st.text_input("Số điện thoại", key="sphone", placeholder="0123...")
+        if st.form_submit_button("Đăng ký & Đăng nhập", type="primary", width="stretch"):
             if not su or not sp or not sphone:
-                st.error("Please fill in Username, Password and Phone Number.")
+                st.error("Vui lòng điền đầy đủ thông tin")
             else:
                 db_l = SessionLocal()
                 try:
                     user_exist = db_l.query(User).filter(User.username == su).first()
                     if user_exist:
-                        st.error("Username already exists. Please choose another.")
+                        st.error("Tên đăng nhập đã tồn tại. Vui lòng chọn tên đăng nhập khác")
                     else:
                         new_u = User(username=su, password=hash_password(sp), email=se, phone=sphone)
                         db_l.add(new_u)
                         db_l.commit()
                         st.session_state.user_id = new_u.id
                         st.session_state.username = new_u.username
-                        st.success("Account created successfully!")
+                        st.success("Tài khoản đã được tạo thành công")
                         st.switch_page("views/shop.py")
                 finally:
                     db_l.close()
 
 with tab3:
-    st.subheader("Recover Password")
+    st.subheader("Khôi phục mật khẩu")
     if "reset_step" not in st.session_state:
         st.session_state.reset_step = 1
 
     if st.session_state.reset_step == 1:
-        email = st.text_input("Enter your registered Email", key="fg_email")
-        if st.button("Send OTP", key="send_otp_btn"):
+        email = st.text_input("Điền Email bạn đã đăng ký", key="fg_email")
+        if st.button("Gửi OTP", key="send_otp_btn"):
             if not email:
-                st.error("Please enter your email.")
+                st.error("Hãy nhập email của bạn")
             else:
                 db_l = SessionLocal()
                 try:
                     user = db_l.query(User).filter(User.email == email).first()
                     if not user:
-                        st.error("No account found with this email.")
+                        st.error("Không có tài khoản nào tương ứng với email")
                     else:
                         otp = generate_otp()
                         st.session_state.reset_otp = otp
@@ -80,7 +80,7 @@ with tab3:
                         st.session_state.otp_created_at = time.time()
                         if send_otp_email(email, otp):
                             st.session_state.reset_step = 2
-                            st.success("OTP sent to your email!")
+                            st.success("OTP đã được gửi tới email của bạn!")
                             st.rerun()
                 finally:
                     db_l.close()
@@ -113,9 +113,9 @@ with tab3:
                 st.rerun()
 
     elif st.session_state.reset_step == 3:
-        new_pass = st.text_input("Enter New Password", type="password", key="new_pass")
-        confirm_pass = st.text_input("Confirm New Password", type="password", key="confirm_pass")
-        if st.button("Reset Password", key="reset_pass_btn"):
+        new_pass = st.text_input("Nhập mật khẩu mới", type="password", key="new_pass")
+        confirm_pass = st.text_input("Xác nhận mật khẩu", type="password", key="confirm_pass")
+        if st.button("Đặt lại mật khẩu", key="reset_pass_btn"):
             if new_pass and new_pass == confirm_pass:
                 db_l = SessionLocal()
                 try:
@@ -123,7 +123,7 @@ with tab3:
                     if user:
                         user.password = hash_password(new_pass)
                         db_l.commit()
-                        st.success("Password reset successfully! You can now login in the Login tab.")
+                        st.success("Mật khẩu đã được đặt lại thành công")
                         st.session_state.reset_step = 1
                         if 'reset_otp' in st.session_state: del st.session_state.reset_otp
                         if 'reset_email' in st.session_state: del st.session_state.reset_email
@@ -134,4 +134,4 @@ with tab3:
                 finally:
                     db_l.close()
             else:
-                st.error("Passwords do not match or cannot be empty.")
+                st.error("Mật khẩu không khớp hoặc để trống")
