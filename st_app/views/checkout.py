@@ -1,9 +1,42 @@
 import streamlit as st
+import math
+import requests
 from app.database import SessionLocal
 from app.models.cart import Cart
 from app.models.order import Order
+from app.models.order_item import OrderItem
 from app.models.product import Product
 from st_app.utils import t
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371.0 # Bán kính trái đất (km)
+    dLat = math.radians(lat2 - lat1)
+    dLon = math.radians(lon2 - lon1)
+    a = math.sin(dLat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dLon/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    return R * c
+
+def get_coordinates(address_detail, province="Hà Nội"):
+    parts = [p.strip() for p in address_detail.split(",") if p.strip()]
+    attempts = [address_detail]
+    if len(parts) >= 2:
+        attempts.append(", ".join(parts[-2:]))
+    if len(parts) >= 3:
+        attempts.append(parts[-1])
+        
+    headers = {"User-Agent": "PetShopApp/1.0"}
+    for attempt in attempts:
+        q = f"{attempt}, {province}, Việt Nam"
+        url = f"https://nominatim.openstreetmap.org/search?q={q}&format=json&limit=1"
+        try:
+            r = requests.get(url, headers=headers, timeout=5)
+            if r.status_code == 200:
+                data = r.json()
+                if len(data) > 0:
+                    return float(data[0]['lat']), float(data[0]['lon'])
+        except:
+            pass
+    return None, None
 
 st.title(f"💳 {t('checkout')}")
 
@@ -13,9 +46,17 @@ try:
     if st.session_state.get('order_placed'):
         st.success("🎉 Hàng đã được đặt thành công! Chúng tôi sẽ sớm liên hệ với bạn để xác định thông tin giao hàng.")
         st.info("Đơn hàng của bạn đang được xử lý. Cảm ơn bạn vì đã mua hàng của chúng tôi!")
-        if st.button("Quay lại cửa hàng 🛍️"):
-            del st.session_state.order_placed
-            st.switch_page("views/shop.py")
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Quay lại cửa hàng 🛍️", use_container_width=True):
+                del st.session_state.order_placed
+                st.switch_page("views/shop.py")
+        with c2:
+            if st.button("Kiểm tra đơn hàng vừa đặt 📦", use_container_width=True, type="primary"):
+                del st.session_state.order_placed
+                st.switch_page("views/profile.py")
+                
         st.stop()
 
     if not st.session_state.get('user_id'):
@@ -33,9 +74,14 @@ try:
             st.switch_page("views/shop.py")
         st.stop()
         
+    if 'shipping_fee' not in st.session_state:
+        st.session_state.shipping_fee = 30000
+    if 'shipping_calculated' not in st.session_state:
+        st.session_state.shipping_calculated = False
+
     # Tính toán tổng tiền
     subtotal = sum([(db.query(Product).filter_by(id=item.product_id).first().price * item.quantity) for item in cart_items if db.query(Product).filter_by(id=item.product_id).first()])
-    shipping_fee = 30000 if subtotal < 1000000 else 0.00
+    shipping_fee = st.session_state.shipping_fee
     total = subtotal + shipping_fee
     
     col1, col2 = st.columns([2, 1])
@@ -66,8 +112,49 @@ try:
         with c_email:
             email = st.text_input("Email", placeholder="example@gmail.com")
             
-        address = st.text_area("Địa chỉ", placeholder="e.g. 123 Hanoi Street, Hoan Kiem, HN")
+        province = st.selectbox("Tỉnh / Thành phố", ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Tỉnh khác..."])
+        address_detail = st.text_area("Địa chỉ cụ thể (Quận/Huyện, Phường/Xã, Số nhà...)", placeholder="e.g. Trần Phú, Hà Đông")
         note = st.text_input("Ghi chú (Tùy chọn)", placeholder="e.g. Giao hàng trong giờ hành chính.")
+        
+        st.markdown(f"**Phí vận chuyển ước tính:** {'Chưa tính (Mặc định 30k)' if not st.session_state.shipping_calculated else f'{shipping_fee:,.0f} VNĐ'}")
+        
+        if st.button("📍 Tính phí vận chuyển (Bắt buộc trước khi thanh toán)", use_container_width=True):
+            if province != "Hà Nội":
+                st.session_state.shipping_fee = 30000
+                st.session_state.shipping_calculated = True
+                st.session_state.ship_msg = "Phí giao hàng ngoại tỉnh là 30.000 VNĐ."
+                st.session_state.ship_msg_type = "success"
+                st.rerun()
+            else:
+                if not address_detail.strip():
+                    st.error("Vui lòng nhập địa chỉ cụ thể để tính khoảng cách")
+                else:
+                    lat, lon = get_coordinates(address_detail.strip(), province="Hà Nội")
+                    if lat and lon:
+                        shop_lat = 20.9808814
+                        shop_lon = 105.787212
+                        dist = haversine(shop_lat, shop_lon, lat, lon)
+                        dist_round = math.ceil(dist)
+                        if dist <= 1:
+                            st.session_state.shipping_fee = 0
+                        else:
+                            st.session_state.shipping_fee = dist_round * 15000
+                        st.session_state.shipping_calculated = True
+                        st.session_state.ship_msg = f"Khoảng cách ước tính: {dist:.1f} km. Phí ship: {st.session_state.shipping_fee:,.0f} VNĐ"
+                        st.session_state.ship_msg_type = "success"
+                        st.rerun()
+                    else:
+                        st.session_state.ship_msg = "Không tìm thấy địa chỉ của bạn trên bản đồ OpenStreetMap. Áp dụng mức phí mặc định 30.000 VNĐ."
+                        st.session_state.ship_msg_type = "error"
+                        st.session_state.shipping_fee = 30000
+                        st.session_state.shipping_calculated = True
+                        st.rerun()
+                        
+        if 'ship_msg' in st.session_state:
+            if st.session_state.ship_msg_type == "success":
+                st.success(st.session_state.ship_msg)
+            else:
+                st.error(st.session_state.ship_msg)
         
         st.markdown("---")
         st.markdown(f"### 💵 Phương thức thanh toán")
@@ -115,8 +202,8 @@ try:
         
         # Nút xác nhận
         if st.button("✅ Xác nhận & Đặt hàng", width="stretch", type="primary"):
-            if not name or not phone or not address:
-                st.error("⚠️ Vui lòng điền đầy đủ các thông tin cần thiết (Tên, Số điện thoại, Địa chỉ).")
+            if not name or not phone or not address_detail:
+                st.error("⚠️ Vui lòng điền đầy đủ các thông tin cần thiết (Tên, Số điện thoại, Địa chỉ cụ thể).")
             elif payment_method == "Credit/Debit Card" and (not cc_name or not cc_num):
                 st.error("⚠️ Vui lòng điền đầy đủ thông tin của Credit Card.")
             else:
@@ -143,7 +230,7 @@ try:
                     if prod and prod.stock is not None:
                         prod.stock -= item.quantity
                 
-                final_address = f"{address}\nEmail: {email}\nNote: {note}\nPayment Method: {payment_method}"
+                final_address = f"{address_detail}\n{province}\nEmail: {email}\nGhi chú: {note}\nPhương thức thanh toán: {payment_method}"
                 
                 new_order = Order(
                     session_id=st.session_state.session_id,
@@ -155,7 +242,18 @@ try:
                     status="Pending"
                 )
                 db.add(new_order)
+                db.flush() # Để lấy ID của order vừa tạo
                 
+                for it in cart_items:
+                    prod = db.query(Product).filter_by(id=it.product_id).first()
+                    if prod:
+                        db.add(OrderItem(
+                            order_id=new_order.id,
+                            product_id=it.product_id,
+                            quantity=it.quantity,
+                            price=prod.price
+                        ))
+
                 # xóa giỏ hàng
                 for it in cart_items:
                     db.delete(it)
@@ -163,6 +261,11 @@ try:
                 
                 st.balloons()
                 st.session_state.order_placed = True
+                
+                if 'shipping_fee' in st.session_state: del st.session_state.shipping_fee
+                if 'shipping_calculated' in st.session_state: del st.session_state.shipping_calculated
+                if 'ship_msg' in st.session_state: del st.session_state.ship_msg
+                
                 st.rerun()
 
 finally:

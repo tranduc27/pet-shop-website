@@ -40,6 +40,9 @@ def migrate():
         if not column_exists("orders", "guest_address"):
             cursor.execute("ALTER TABLE orders ADD COLUMN guest_address TEXT DEFAULT NULL")
             print("Added guest_address to orders")
+        if not column_exists("orders", "return_reason"):
+            cursor.execute("ALTER TABLE orders ADD COLUMN return_reason TEXT DEFAULT NULL")
+            print("Added return_reason to orders")
         
         conn.commit()
         print("Migration successful.")

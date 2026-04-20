@@ -70,8 +70,7 @@ translations = {
 }
 
 def t(key):
-    lang = st.session_state.get('lang', 'English')
-    return translations.get(lang, translations['English']).get(key, key)
+    return translations.get('Vietnamese', {}).get(key, key)
 
 def get_db():
     db = SessionLocal()

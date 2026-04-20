@@ -27,8 +27,8 @@ try:
     with col1:
         st.header("Thông tin cơ bản")
         st.markdown(f"**Tên đăng nhập:** {user.username}")
-        st.markdown(f"**Email:** {user.email or 'Not provided'}")
-        st.markdown(f"**Số điện thoại:** {user.phone or 'Not provided'}")
+        st.markdown(f"**Email:** {user.email or 'Chưa cung cấp'}")
+        st.markdown(f"**Số điện thoại:** {user.phone or 'Chưa cung cấp'}")
         
     with col2:
         st.header("🛒 Lịch sử mua hàng")
@@ -39,14 +39,47 @@ try:
             st.info("Bạn chưa đặt hàng.")
         else:
             for order in orders:
-                # Định dạng tiêu đề đơn hàng
-                dt_str = order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else "Unknown Date"
-                title = f"Order #{order.id} - {dt_str} | Total: ${order.total_price:.2f} | Status: {order.status.capitalize()}"
+                # Bản đồ trạng thái
+                status_map = {
+                    "pending": "Chờ xử lý", "Pending": "Chờ xử lý",
+                    "shipped": "Đang giao", "shipped": "Đang giao",
+                    "delivered": "Đã giao", "delivered": "Đã giao",
+                    "return_requested": "Yêu cầu trả hàng",
+                    "returned": "Đã trả hàng",
+                    "return_rejected": "Từ chối trả hàng"
+                }
                 
-                with st.expander(title):
-                    st.write(f"**Tên :** {order.guest_name or user.username}")
-                    st.write(f"**SỐ điện thoại:** {order.guest_phone or user.phone or 'N/A'}")
-                    st.write(f"**Địa chỉ giao hàng:** {order.guest_address or 'N/A'}")
+                # Định dạng tiêu đề đơn hàng
+                dt_str = order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else "Ngày không xác định"
+                status_vn = status_map.get(order.status, order.status)
+                title = f"Đơn hàng #{order.id} - {dt_str} | Tổng cộng: {order.total_price:,.0f} VNĐ | Trạng thái: {status_vn}"
+                
+                with st.expander(title, expanded=True if order.id == orders[0].id else False): # Tự động mở đơn đầu tiên
+                    # Tiến trình đơn hàng
+                    steps = ["pending", "shipped", "delivered"]
+                    if order.status.lower() in steps:
+                        curr_idx = steps.index(order.status.lower())
+                        st.progress((curr_idx + 1) / len(steps))
+                        
+                        cols = st.columns(3)
+                        with cols[0]:
+                            st.markdown("**✅ Chờ xử lý**" if curr_idx >= 0 else "⬜ Chờ xử lý")
+                        with cols[1]:
+                            st.markdown(f"**<div style='text-align: center'>{'✅ Đang giao' if curr_idx >= 1 else '⬜ Đang giao'}</div>**", unsafe_allow_html=True)
+                        with cols[2]:
+                            st.markdown(f"**<div style='text-align: right'>{'✅ Đã giao' if curr_idx >= 2 else '⬜ Đã giao'}</div>**", unsafe_allow_html=True)
+                    elif order.status.lower() == "return_requested":
+                        st.warning("🔄 Đang xử lý yêu cầu trả hàng")
+                    elif order.status.lower() == "returned":
+                        st.error("🔙 Đã hoàn trả hàng thủ tục xong")
+                    elif order.status.lower() == "return_rejected":
+                        st.error("❌ Yêu cầu trả hàng bị từ chối")
+                        
+                    st.divider()
+                
+                    st.write(f"**Tên:** {order.guest_name or user.username}")
+                    st.write(f"**Số điện thoại:** {order.guest_phone or user.phone or 'Chưa cung cấp'}")
+                    st.write(f"**Địa chỉ giao hàng (Kèm ghi chú/thanh toán):** {order.guest_address or 'Chưa cung cấp'}")
                     
                     # Lấy danh sách sản phẩm
                     items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
@@ -54,14 +87,38 @@ try:
                         item_data = []
                         for item in items:
                             product = db.query(Product).filter(Product.id == item.product_id).first()
-                            product_name = product.name if product else "Unknown Product"
+                            product_name = product.name if product else "Sản phẩm không xác định"
                             item_data.append({
                                 "Sản phẩm": product_name,
                                 "Số lượng": item.quantity,
-                                "Price/Unit": f"${item.price:.2f}"
+                                "Đơn giá": f"{item.price:,.0f} VNĐ"
                             })
                         st.table(pd.DataFrame(item_data))
                     else:
                         st.write("Không có sản phẩm trong đơn đặt hàng")
+                        
+                    st.divider()
+                    if order.status not in ["return_requested", "returned", "return_rejected"]:
+                        with st.form(f"return_form_{order.id}"):
+                            st.write("Cảm thấy không hài lòng hoặc hàng bị lỗi?")
+                            return_reason = st.text_area("Lý do trả hàng", key=f"reason_{order.id}")
+                            submit_return = st.form_submit_button("Gửi yêu cầu trả hàng")
+                            if submit_return:
+                                if return_reason.strip() == "":
+                                    st.error("Vui lòng nhập lý do trả hàng.")
+                                else:
+                                    order_to_update = db.query(Order).filter(Order.id == order.id).first()
+                                    if order_to_update:
+                                        order_to_update.status = "return_requested"
+                                        order_to_update.return_reason = return_reason
+                                        db.commit()
+                                        st.success("Yêu cầu trả hàng đã được gửi thành công! Cửa hàng sẽ sớm liên hệ thay thế/hoàn tiền.")
+                                        st.rerun()
+                    elif order.status == "return_requested":
+                        st.info(f"Đang chờ xử lý yêu cầu trả hàng. Lý do: {order.return_reason}")
+                    elif order.status == "returned":
+                        st.success(f"Yêu cầu trả hàng của bạn đã được hoàn tất. Cảm ơn phản hồi của bạn.")
+                    elif order.status == "return_rejected":
+                        st.error(f"Yêu cầu trả hàng của bạn bị từ chối. Vui lòng liên hệ hỗ trợ.")
 finally:
     db.close()
