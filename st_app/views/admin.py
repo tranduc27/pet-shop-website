@@ -96,8 +96,12 @@ try:
                               api_key = st.secrets["cloudinary"]["api_key"],
                               api_secret = st.secrets["cloudinary"]["api_secret"]
                             )
-                        response = cloudinary.uploader.upload(p_image_file)
-                        final_image_url = response['secure_url']
+                            # Upload directly from bytes
+                            response = cloudinary.uploader.upload(p_image_file.read())
+                            final_image_url = response['secure_url']
+                        else:
+                            st.error("Chưa cấu hình Cloudinary trong secrets!")
+                            st.stop()
                     except Exception as e:
                         st.error(f"Lỗi tải ảnh lên Cloudinary: {e}")
                         st.stop()

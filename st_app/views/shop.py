@@ -117,17 +117,36 @@ def product_detail_modal(product):
         else:
             st.info("Chưa có nhận xét")
             
-        with st.expander("📝 Viết đánh giá"):
-            with st.form(f"review_form_{product.id}"):
-                rev_name = st.text_input("Tên", "khách hàng")
-                rev_rating = st.slider("Đánh giá", 1, 5, 5)
-                rev_comment = st.text_area("Đánh giá của bạn")
-                if st.form_submit_button("Gửi"):
-                    new_rev = Review(reviewer_name=rev_name, rating=rev_rating, comment=rev_comment, product_id=product.id)
-                    db.add(new_rev)
-                    db.commit()
-                    st.success("Đã gửi")
-                    st.rerun()
+        has_purchased = False
+        if st.session_state.get("user_id"):
+            from app.models.order import Order
+            from app.models.order_item import OrderItem
+            purchased = db.query(OrderItem).join(Order).filter(
+                Order.user_id == st.session_state.user_id,
+                OrderItem.product_id == product.id,
+                Order.status != 'returned'
+            ).first()
+            if purchased:
+                has_purchased = True
+
+        if has_purchased:
+            with st.expander("📝 Viết đánh giá"):
+                with st.form(f"review_form_{product.id}"):
+                    # Using logged in username as reviewer name (disabled so they can't change it to someone else easily)
+                    rev_name = st.text_input("Tên", st.session_state.get("username", "Khách hàng"), disabled=True)
+                    rev_rating = st.slider("Đánh giá", 1, 5, 5)
+                    rev_comment = st.text_area("Đánh giá của bạn")
+                    if st.form_submit_button("Gửi"):
+                        new_rev = Review(reviewer_name=rev_name, rating=rev_rating, comment=rev_comment, product_id=product.id)
+                        db.add(new_rev)
+                        db.commit()
+                        st.success("Đã gửi")
+                        st.rerun()
+        else:
+            if not st.session_state.get("user_id"):
+                st.info("Vui lòng đăng nhập và mua sản phẩm để đánh giá.")
+            else:
+                st.info("Bạn cần mua sản phẩm này để có thể đánh giá.")
     finally:
         db.close()
 
