@@ -25,6 +25,12 @@ with scol2:
 with scol3:
     sort_by = st.selectbox("Sắp xếp theo", ["Mặc định", "Giá: Thấp đến cao", "Giá: Cao đến thấp", "Tên: A-Z", "Tên: Z-A"])
 
+scol4, scol5 = st.columns(2)
+with scol4:
+    pet_type_filter = st.selectbox("Loại thú cưng", ["Tất cả", "Chó", "Mèo", "Chung"])
+with scol5:
+    price_filter = st.selectbox("Mức giá", ["Tất cả", "< 100k", "100k - 500k", "500k - 1tr", "> 1tr"])
+
 @st.dialog("Chi tiết sản phẩm", width="large")
 def product_detail_modal(product):
     cols = st.columns(2)
@@ -69,7 +75,18 @@ def product_detail_modal(product):
         with c1:
             if st.button(t('add_to_cart'), width="stretch", type="primary", disabled=out_of_stock):
                 if not st.session_state.get("user_id"):
-                    st.switch_page("views/login.py")
+                    if "guest_cart" not in st.session_state:
+                        st.session_state.guest_cart = []
+                    
+                    existing_item = next((item for item in st.session_state.guest_cart if item['product_id'] == product.id), None)
+                    if existing_item:
+                        existing_item['quantity'] += qty
+                    else:
+                        import uuid
+                        st.session_state.guest_cart.append({"id": str(uuid.uuid4()), "product_id": product.id, "quantity": qty})
+                    
+                    st.success("Đã thêm vào giỏ hàng (Khách)!")
+                    st.rerun()
                 else:
                     db = SessionLocal()
                     try:
@@ -157,7 +174,24 @@ try:
         products_query = products_query.filter(Product.name.ilike(f"%{search_query}%"))
     if category_filter != "Tất cả":
         products_query = products_query.filter(Product.category == category_filter)
+    if pet_type_filter != "Tất cả":
+        products_query = products_query.filter(Product.pet_type == pet_type_filter)
+        
     products = products_query.all()
+    
+    if price_filter != "Tất cả":
+        filtered_products = []
+        for p in products:
+            price = p.price * (1 - (p.discount_percent or 0) / 100) if (p.is_today_sale and p.discount_percent) else p.price
+            if price_filter == "< 100k" and price < 100000:
+                filtered_products.append(p)
+            elif price_filter == "100k - 500k" and 100000 <= price <= 500000:
+                filtered_products.append(p)
+            elif price_filter == "500k - 1tr" and 500000 < price <= 1000000:
+                filtered_products.append(p)
+            elif price_filter == "> 1tr" and price > 1000000:
+                filtered_products.append(p)
+        products = filtered_products
     
     if sort_by == "Giá: Thấp đến cao":
         products.sort(key=lambda x: x.price * (1 - (x.discount_percent or 0) / 100) if x.is_today_sale else x.price)

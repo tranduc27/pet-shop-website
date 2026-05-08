@@ -84,6 +84,7 @@ try:
             p_desc = st.text_area("Mô tả")
             p_image = st.text_input("URL hình ảnh (Tùy chọn)", placeholder="https://example.com/image.jpg")
             p_image_file = st.file_uploader("Hoặc tải ảnh lên Cloudinary", type=["png", "jpg", "jpeg", "webp"])
+            p_pet_type = st.selectbox("Loại thú cưng", ["Chung", "Chó", "Mèo"])
             p_sale = st.checkbox("Giảm giá hôm nay?")
             p_disc = st.number_input("Phần trăm giảm %", min_value=0.0, max_value=100.0)
             if st.form_submit_button("Thêm sản phẩm", type="primary"):
@@ -106,7 +107,7 @@ try:
                         st.error(f"Lỗi tải ảnh lên Cloudinary: {e}")
                         st.stop()
                 
-                new_p = Product(name=p_name, price=p_price, stock=p_stock, description=p_desc, image_url=final_image_url, is_today_sale=p_sale, discount_percent=p_disc)
+                new_p = Product(name=p_name, price=p_price, stock=p_stock, description=p_desc, image_url=final_image_url, pet_type=p_pet_type, is_today_sale=p_sale, discount_percent=p_disc)
                 db.add(new_p)
                 db.commit()
                 st.success("Đã thêm sản phẩm thành công!")
@@ -142,7 +143,7 @@ try:
         prods = db.query(Product).all()
         if prods:
             df = pd.DataFrame([{
-                'ID': p.id, 'Tên sản phẩm': p.name, 'Mô tả': p.description if p.description else '', 'Giá': p.price, 'Tồn kho': p.stock if p.stock is not None else 0, 
+                'ID': p.id, 'Tên sản phẩm': p.name, 'Loại thú cưng': p.pet_type or "Chung", 'Mô tả': p.description if p.description else '', 'Giá': p.price, 'Tồn kho': p.stock if p.stock is not None else 0, 
                 'URL hình ảnh': p.image_url if p.image_url else '',
                 'Đang giảm giá': p.is_today_sale, 'Phần trăm giảm %': p.discount_percent if p.discount_percent is not None else 0.0
             } for p in prods])
@@ -169,6 +170,12 @@ try:
                         max_value=100,
                         format="%d %%"
                     ),
+                    "Loại thú cưng": st.column_config.SelectboxColumn(
+                        "Dành cho",
+                        help="Dành cho thú cưng nào",
+                        options=["Chung", "Chó", "Mèo"],
+                        required=True
+                    ),
                     "Đang giảm giá": st.column_config.CheckboxColumn(
                         "Đang Sale?",
                         default=False,
@@ -182,6 +189,7 @@ try:
                     p = db.query(Product).filter_by(id=p_id).first()
                     if p:
                         p.name = row['Tên sản phẩm']
+                        p.pet_type = row['Loại thú cưng']
                         p.description = row.get('Mô tả', '')
                         p.price = float(row['Giá'])
                         p.stock = int(row['Tồn kho'])
@@ -199,8 +207,11 @@ try:
                 'ID': o.id, 
                 'Trạng thái': o.status, 
                 'Khách hàng': o.guest_name or "N/A", 
+                'SĐT': o.guest_phone or "N/A",
+                'Địa chỉ': o.guest_address or "N/A",
                 'Tổng tiền': o.total_price, 
                 'Ngày đặt': o.created_at.strftime('%Y-%m-%d %H:%M') if o.created_at else "", 
+                'Ngày giao': o.delivery_date.strftime('%Y-%m-%d') if o.delivery_date else "Chưa có",
                 'Lý do trả hàng': o.return_reason or "",
                 'Ảnh trả hàng': o.return_image_url or None
             } for o in orders])
@@ -208,7 +219,7 @@ try:
             edited_odf = st.data_editor(
                 odf, 
                 width="stretch", 
-                disabled=["ID", "Khách hàng", "Tổng tiền", "Ngày đặt", "Lý do trả hàng", "Ảnh trả hàng"],
+                disabled=["ID", "Khách hàng", "SĐT", "Địa chỉ", "Tổng tiền", "Ngày đặt", "Ngày giao", "Lý do trả hàng", "Ảnh trả hàng"],
                 column_config={
                     "Trạng thái": st.column_config.SelectboxColumn(
                         "Trạng thái",

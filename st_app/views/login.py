@@ -4,6 +4,7 @@ from app.database import SessionLocal
 from app.models.user import User
 from st_app.auth_utils import hash_password, verify_password
 from st_app.email_service import generate_otp, send_otp_email
+from app.models.cart import Cart
 
 st.title("🔐 Đăng ký / Đăng nhập")
 
@@ -23,6 +24,18 @@ with tab1:
                     if user_exist and verify_password(p, user_exist.password):
                         st.session_state.user_id = user_exist.id
                         st.session_state.username = user_exist.username
+                        
+                        if "guest_cart" in st.session_state and st.session_state.guest_cart:
+                            for item in st.session_state.guest_cart:
+                                existing = db_l.query(Cart).filter_by(user_id=user_exist.id, product_id=item['product_id']).first()
+                                if existing:
+                                    existing.quantity += item['quantity']
+                                else:
+                                    new_item = Cart(user_id=user_exist.id, product_id=item['product_id'], quantity=item['quantity'])
+                                    db_l.add(new_item)
+                            db_l.commit()
+                            st.session_state.guest_cart = []
+                            
                         st.success("Đăng nhập thành công")
                         st.switch_page("views/shop.py")
                     else:
@@ -51,6 +64,18 @@ with tab2:
                         db_l.commit()
                         st.session_state.user_id = new_u.id
                         st.session_state.username = new_u.username
+                        
+                        if "guest_cart" in st.session_state and st.session_state.guest_cart:
+                            for item in st.session_state.guest_cart:
+                                existing = db_l.query(Cart).filter_by(user_id=new_u.id, product_id=item['product_id']).first()
+                                if existing:
+                                    existing.quantity += item['quantity']
+                                else:
+                                    new_item = Cart(user_id=new_u.id, product_id=item['product_id'], quantity=item['quantity'])
+                                    db_l.add(new_item)
+                            db_l.commit()
+                            st.session_state.guest_cart = []
+                            
                         st.success("Tài khoản đã được tạo thành công")
                         st.switch_page("views/shop.py")
                 finally:

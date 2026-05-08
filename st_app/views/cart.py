@@ -32,14 +32,21 @@ def product_detail_modal(product):
 
 st.title(f"🛒 {t('Giỏ hàng')}")
 
+class GuestCartItem:
+    def __init__(self, id, product_id, quantity):
+        self.id = id
+        self.product_id = product_id
+        self.quantity = quantity
+
 db = SessionLocal()
 try:
+    is_guest = False
     if not st.session_state.get('user_id'):
-        st.warning("⚠️ Vui lòng đăng nhập")
-        st.stop()
-        
-    user_id = st.session_state.user_id
-    cart_items = db.query(Cart).filter(Cart.user_id == user_id).all()
+        is_guest = True
+        cart_items = [GuestCartItem(**d) for d in st.session_state.get('guest_cart', [])]
+    else:
+        user_id = st.session_state.user_id
+        cart_items = db.query(Cart).filter(Cart.user_id == user_id).all()
     
     if not cart_items:
         st.info(t('empty_cart'))
@@ -67,15 +74,25 @@ try:
             with c3:
                 new_qty = st.number_input(t('Số lượng'), min_value=1, value=item.quantity, key=f"qty_{item.id}")
                 if new_qty != item.quantity:
-                    item.quantity = new_qty
-                    db.commit()
-                    st.rerun()
+                    if is_guest:
+                        for gi in st.session_state.guest_cart:
+                            if gi['id'] == item.id:
+                                gi['quantity'] = new_qty
+                        st.rerun()
+                    else:
+                        item.quantity = new_qty
+                        db.commit()
+                        st.rerun()
             with c4:
                 st.write(f"**{product.price * item.quantity:,.0f} VNĐ**")
                 if st.button("🗑️ Xóa", key=f"rem_{item.id}"):
-                    db.delete(item)
-                    db.commit()
-                    st.rerun()
+                    if is_guest:
+                        st.session_state.guest_cart = [gi for gi in st.session_state.guest_cart if gi['id'] != item.id]
+                        st.rerun()
+                    else:
+                        db.delete(item)
+                        db.commit()
+                        st.rerun()
             
             if is_selected:
                 total += product.price * item.quantity
@@ -103,6 +120,7 @@ try:
                 
                 if not stock_error:
                     st.session_state.checkout_item_ids = selected_ids
+                    st.session_state.is_guest_checkout = is_guest
                     st.switch_page("views/checkout.py")
             
 finally:

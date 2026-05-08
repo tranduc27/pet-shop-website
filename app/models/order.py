@@ -17,6 +17,7 @@ class Order(Base):
     
     total_price = Column(Float)
     created_at = Column(DateTime, default=datetime.utcnow)
+    delivery_date = Column(DateTime, nullable=True)
     status = Column(String(20), default="pending")
 
     owner = relationship("User", back_populates="orders")

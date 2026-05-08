@@ -134,11 +134,18 @@ try:
                 
         st.stop()
 
-    if not st.session_state.get('user_id'):
-        st.warning("⚠️ Vui lòng đăng nhập từ trang cửa hàng để tiếp tục thanh toán.")
-        st.stop()
+    is_guest = not st.session_state.get('user_id')
 
-    cart_items_all = db.query(Cart).filter_by(user_id=st.session_state.user_id).all()
+    if is_guest:
+        class GuestCartItem:
+            def __init__(self, id, product_id, quantity):
+                self.id = id
+                self.product_id = product_id
+                self.quantity = quantity
+        cart_items_all = [GuestCartItem(**d) for d in st.session_state.get('guest_cart', [])]
+    else:
+        cart_items_all = db.query(Cart).filter_by(user_id=st.session_state.user_id).all()
+
     if 'checkout_item_ids' in st.session_state:
         cart_items = [item for item in cart_items_all if item.id in st.session_state.checkout_item_ids]
     else:
@@ -189,6 +196,11 @@ try:
             
         province = st.selectbox("Tỉnh / Thành phố", ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Tỉnh khác..."])
         address_detail = st.text_area("Địa chỉ cụ thể (Quận/Huyện, Phường/Xã, Số nhà...)", placeholder="e.g. Trần Phú, Hà Đông")
+        
+        from datetime import datetime, timedelta
+        min_date = datetime.now().date() + timedelta(days=1)
+        delivery_date = st.date_input("Ngày mong muốn nhận hàng", value=min_date, min_value=min_date)
+        
         note = st.text_input("Ghi chú (Tùy chọn)", placeholder="e.g. Giao hàng trong giờ hành chính.")
         
         shipping_method = st.radio(
@@ -259,26 +271,108 @@ try:
         
         # Giao diện người dùng theo phương thức thanh toán
         if payment_method == "Credit/Debit Card":
-            st.info("🔒 Form thanh toán")
-            cc_name = st.text_input("Cardholder Name", placeholder="TRAN DINH DUC")
-            cc_num = st.text_input("Card Number", placeholder="0000 0000 0000 0000", max_chars=19)
+            st.info("🔒 Form thanh toán an toàn")
+            
+            card_type = st.radio("Loại thẻ", ["Visa", "MasterCard", "JCB", "Napas"], horizontal=True)
+            
+            if card_type == "Visa":
+                bg_gradient = "linear-gradient(135deg, #1a1f71 0%, #005ce6 100%)"
+                logo = "VISA"
+            elif card_type == "MasterCard":
+                bg_gradient = "linear-gradient(135deg, #231f20 0%, #cc0000 50%, #ff6600 100%)"
+                logo = "MasterCard"
+            elif card_type == "JCB":
+                bg_gradient = "linear-gradient(135deg, #007940 0%, #00a859 100%)"
+                logo = "JCB"
+            else:
+                bg_gradient = "linear-gradient(135deg, #008f51 0%, #f47d31 100%)"
+                logo = "NAPAS"
+            
+            # CSS for realistic credit card
+            st.markdown(f"""
+            <style>
+            .credit-card {{
+                background: {bg_gradient};
+                border-radius: 15px;
+                padding: 20px;
+                color: white;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                margin-bottom: 20px;
+                font-family: 'Courier New', Courier, monospace;
+                position: relative;
+            }}
+            .cc-chip {{
+                width: 40px;
+                height: 30px;
+                background: #ffcc00;
+                border-radius: 5px;
+                margin-bottom: 15px;
+            }}
+            .cc-logo {{
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                font-size: 1.5rem;
+                font-weight: bold;
+                font-style: italic;
+                font-family: 'Arial', sans-serif;
+            }}
+            .cc-number {{
+                font-size: 1.5rem;
+                letter-spacing: 2px;
+                margin-bottom: 10px;
+            }}
+            .cc-details {{
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.9rem;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+            
+            cc_name = st.text_input("Tên chủ thẻ (Cardholder Name)", placeholder="TRAN DINH DUC")
+            cc_num = st.text_input("Số thẻ (Card Number)", placeholder="0000 0000 0000 0000", max_chars=19)
             cc1, cc2 = st.columns(2)
             with cc1:
-                st.text_input("Expiry Date", placeholder="MM/YY")
+                cc_exp = st.text_input("Ngày hết hạn (MM/YY)", placeholder="MM/YY")
             with cc2:
-                st.text_input("CVV", placeholder="123", type="password")
+                cc_cvv = st.text_input("CVV", placeholder="123", type="password")
+            
+            st.markdown(f"""
+            <div class="credit-card">
+                <div class="cc-logo">{logo}</div>
+                <div class="cc-chip"></div>
+                <div class="cc-number">{cc_num if cc_num else '**** **** **** ****'}</div>
+                <div class="cc-details">
+                    <div>{cc_name.upper() if cc_name else 'CARDHOLDER NAME'}</div>
+                    <div>{cc_exp if cc_exp else 'MM/YY'}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
                 
         elif payment_method == "Chuyển khoản ngân hàng":
-            st.info("🏦 Thông tin tài khoản ngân hàng")
-            st.markdown("""
-            Vui lòng chuyển tiền theo thông tin dưới đây
+            if 'pay_code' not in st.session_state:
+                import random
+                import string
+                st.session_state.pay_code = "PAY-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                
+            pay_code = st.session_state.pay_code
             
-            **Ngân hàng:** Vietcombank (VCB)  
-            **Tên chủ tài khoản:** PET SHOP PREMIUM VN  
-            **Số tài khoản:** `0123456789`  
-            **Nội dung chuyển khoản:** `PAY-[Your Phone Number]`
-            """)
-            st.file_uploader("Tải lên hóa đơn chuyển tiền (Tùy chọn)", type=["png", "jpg", "jpeg", "pdf"])
+            st.info("🏦 Thông tin tài khoản ngân hàng")
+            bc1, bc2 = st.columns([1, 1])
+            with bc1:
+                st.markdown(f"""
+                <div style='background-color:#f8f9fa; padding:15px; border-radius:10px; border-left: 5px solid #005A9E;'>
+                <p style='color:#005A9E; font-weight:bold; margin-bottom:5px;'>Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)</p>
+                <p style='margin:0;'><b>Chủ tài khoản:</b> PET SHOP PREMIUM VN</p>
+                <p style='margin:0; font-size:1.2rem; color:#d63031; font-weight:bold;'>Số TK: 0123456789</p>
+                <p style='margin-top:10px;'><b>Nội dung chuyển khoản:</b> <span style='background:#eccc68; padding:2px 5px; border-radius:3px; font-weight:bold;'>{pay_code}</span></p>
+                </div>
+                """, unsafe_allow_html=True)
+                st.file_uploader("Tải lên hóa đơn chuyển tiền (Tùy chọn)", type=["png", "jpg", "jpeg", "pdf"])
+            with bc2:
+                qr_data = f"Vietcombank|0123456789|PET SHOP PREMIUM VN|{total}|{pay_code}"
+                st.image(f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={qr_data}", caption="Quét mã QR để thanh toán")
             
         elif payment_method == "Ví điện tử (MoMo/ZaloPay)":
             st.info("📱 Quét mã QR để thanh toán qua MoMo/ZaloPay")
@@ -325,13 +419,14 @@ try:
                 final_address = f"{address_detail}\n{province}\nEmail: {email}\nGhi chú: {note}\nPhương thức vận chuyển: {shipping_method}\nPhương thức thanh toán: {payment_method}"
                 
                 new_order = Order(
-                    session_id=st.session_state.session_id,
-                    user_id=st.session_state.user_id,
+                    session_id=st.session_state.get('session_id'),
+                    user_id=st.session_state.get('user_id'),
                     guest_name=name,
                     guest_phone=phone,
                     guest_address=final_address,
                     total_price=total,
-                    status="Pending"
+                    status="Pending",
+                    delivery_date=delivery_date
                 )
                 db.add(new_order)
                 db.flush() # Để lấy ID của order vừa tạo
@@ -347,8 +442,11 @@ try:
                         ))
 
                 # xóa giỏ hàng
-                for it in cart_items:
-                    db.delete(it)
+                if is_guest:
+                    st.session_state.guest_cart = [gi for gi in st.session_state.guest_cart if gi['id'] not in st.session_state.checkout_item_ids]
+                else:
+                    for it in cart_items:
+                        db.delete(it)
                 db.commit()
                 
                 st.balloons()
@@ -358,6 +456,7 @@ try:
                 if 'shipping_fee' in st.session_state: del st.session_state.shipping_fee
                 if 'shipping_calculated' in st.session_state: del st.session_state.shipping_calculated
                 if 'ship_msg' in st.session_state: del st.session_state.ship_msg
+                if 'pay_code' in st.session_state: del st.session_state.pay_code
                 
                 st.rerun()
 

@@ -80,18 +80,13 @@ def get_db():
         db.close()
 
 def get_cart_count():
+    user_id = st.session_state.get('user_id')
+    if not user_id:
+        return sum([item['quantity'] for item in st.session_state.get('guest_cart', [])])
+        
     db = SessionLocal()
     try:
-        session_id = st.session_state.get('session_id')
-        user_id = st.session_state.get('user_id')
-        
-        query = db.query(Cart)
-        if user_id:
-            query = query.filter(Cart.user_id == user_id)
-        else:
-            query = query.filter(Cart.session_id == session_id)
-            
-        items = query.all()
+        items = db.query(Cart).filter(Cart.user_id == user_id).all()
         return sum([item.quantity for item in items])
     finally:
         db.close()
