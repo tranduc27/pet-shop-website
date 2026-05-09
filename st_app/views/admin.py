@@ -213,7 +213,8 @@ try:
                 'Ngày đặt': o.created_at.strftime('%Y-%m-%d %H:%M') if o.created_at else "", 
                 'Ngày giao': o.delivery_date.strftime('%Y-%m-%d') if o.delivery_date else "Chưa có",
                 'Lý do trả hàng': o.return_reason or "",
-                'Ảnh trả hàng': o.return_image_url or None
+                'Ảnh trả hàng': o.return_image_url or None,
+                'Ghi chú': o.admin_note or ""
             } for o in orders])
             
             edited_odf = st.data_editor(
@@ -230,20 +231,28 @@ try:
                     "Ảnh trả hàng": st.column_config.ImageColumn(
                         "Ảnh trả hàng",
                         help="Hình ảnh sản phẩm khách hàng yêu cầu trả"
+                    ),
+                    "Ghi chú": st.column_config.TextColumn(
+                        "Ghi chú",
+                        help="Ghi chú nội bộ cho đơn hàng này"
                     )
                 },
                 key="order_editor"
             )
             
-            if st.button("Lưu thay đổi trạng thái", type="primary"):
+            if st.button("Lưu thay đổi", type="primary", key="save_orders_btn"):
                 for index, row in edited_odf.iterrows():
                     o_id = row['ID']
                     o_status = row['Trạng thái']
+                    o_note = row['Ghi chú']
                     o = db.query(Order).filter_by(id=o_id).first()
-                    if o and o.status != o_status:
-                        o.status = o_status
+                    if o:
+                        if o.status != o_status:
+                            o.status = o_status
+                        if o.admin_note != o_note:
+                            o.admin_note = o_note
                 db.commit()
-                st.success("Cập nhật trạng thái đơn hàng thành công!")
+                st.success("Cập nhật đơn hàng thành công!")
                 st.rerun()
         else:
             st.info("Chưa có đơn hàng nào.")

@@ -40,6 +40,11 @@ def get_coordinates(address_detail, province="Hà Nội"):
 
 st.title(f"💳 {t('checkout')}")
 
+if "user_id" not in st.session_state:
+    st.session_state.login_message = "Vui lòng đăng nhập để tiến hành thanh toán."
+    st.switch_page("views/login.py")
+    st.stop()
+
 db = SessionLocal()
 try:
     # Đầu tiên kiểm tra xem đơn hàng vừa được đặt hay không
@@ -196,10 +201,6 @@ try:
             
         province = st.selectbox("Tỉnh / Thành phố", ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Tỉnh khác..."])
         address_detail = st.text_area("Địa chỉ cụ thể (Quận/Huyện, Phường/Xã, Số nhà...)", placeholder="e.g. Trần Phú, Hà Đông")
-        
-        from datetime import datetime, timedelta
-        min_date = datetime.now().date() + timedelta(days=1)
-        delivery_date = st.date_input("Ngày mong muốn nhận hàng", value=min_date, min_value=min_date)
         
         note = st.text_input("Ghi chú (Tùy chọn)", placeholder="e.g. Giao hàng trong giờ hành chính.")
         
@@ -426,7 +427,7 @@ try:
                     guest_address=final_address,
                     total_price=total,
                     status="Pending",
-                    delivery_date=delivery_date
+                    delivery_date=None
                 )
                 db.add(new_order)
                 db.flush() # Để lấy ID của order vừa tạo

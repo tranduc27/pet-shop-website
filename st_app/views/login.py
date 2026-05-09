@@ -8,6 +8,10 @@ from app.models.cart import Cart
 
 st.title("🔐 Đăng ký / Đăng nhập")
 
+if "login_message" in st.session_state:
+    st.info(st.session_state.login_message)
+    del st.session_state.login_message
+
 tab1, tab2, tab3 = st.tabs(["Đăng nhập", "Đăng ký", "Quên mật khẩu"])
 
 with tab1:

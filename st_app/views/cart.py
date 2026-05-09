@@ -100,28 +100,36 @@ try:
             
         st.markdown(f"### {t('Tổng tiền')}: {total:,.0f} VNĐ")
         if st.button(t('Thanh toán'), type="primary", width="stretch"):
-            selected_ids = [item.id for item in cart_items if st.session_state.get(f"sel_{item.id}", True)]
-            if not selected_ids:
-                st.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán.")
+            if is_guest:
+                st.warning("Vui lòng đăng nhập để tiến hành thanh toán.")
+                # Sử dụng time.sleep hoặc just st.stop() sau error để user đọc
+                # Tuy nhiên st.switch_page chạy ngay lập tức. 
+                # Có thể lưu state để hiển thị ở login page:
+                st.session_state.login_message = "Vui lòng đăng nhập để tiếp tục thanh toán"
+                st.switch_page("views/login.py")
             else:
-                stock_error = False
-                selected_items = [item for item in cart_items if item.id in selected_ids]
-                for item in selected_items:
-                    prod = db.query(Product).filter_by(id=item.product_id).first()
-                    if prod and prod.stock is not None:
-                        if prod.stock <= 0:
-                            st.error(f"Sản phẩm '{prod.name}' đã hết hàng. Vui lòng bỏ chọn hoặc xóa khỏi giỏ hàng để tiếp tục.")
-                            stock_error = True
-                            break
-                        elif prod.stock < item.quantity:
-                            st.error(f"Sản phẩm '{prod.name}' hiện chỉ còn {prod.stock} sản phẩm. Không đủ đáp ứng, vui lòng sửa lại số lượng.")
-                            stock_error = True
-                            break
-                
-                if not stock_error:
-                    st.session_state.checkout_item_ids = selected_ids
-                    st.session_state.is_guest_checkout = is_guest
-                    st.switch_page("views/checkout.py")
+                selected_ids = [item.id for item in cart_items if st.session_state.get(f"sel_{item.id}", True)]
+                if not selected_ids:
+                    st.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán.")
+                else:
+                    stock_error = False
+                    selected_items = [item for item in cart_items if item.id in selected_ids]
+                    for item in selected_items:
+                        prod = db.query(Product).filter_by(id=item.product_id).first()
+                        if prod and prod.stock is not None:
+                            if prod.stock <= 0:
+                                st.error(f"Sản phẩm '{prod.name}' đã hết hàng. Vui lòng bỏ chọn hoặc xóa khỏi giỏ hàng để tiếp tục.")
+                                stock_error = True
+                                break
+                            elif prod.stock < item.quantity:
+                                st.error(f"Sản phẩm '{prod.name}' hiện chỉ còn {prod.stock} sản phẩm. Không đủ đáp ứng, vui lòng sửa lại số lượng.")
+                                stock_error = True
+                                break
+                    
+                    if not stock_error:
+                        st.session_state.checkout_item_ids = selected_ids
+                        st.session_state.is_guest_checkout = is_guest
+                        st.switch_page("views/checkout.py")
             
 finally:
     db.close()

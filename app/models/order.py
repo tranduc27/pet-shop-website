@@ -14,6 +14,7 @@ class Order(Base):
     guest_address = Column(Text, nullable=True)
     return_reason = Column(Text, nullable=True)
     return_image_url = Column(String(255), nullable=True)
+    admin_note = Column(Text, nullable=True)
     
     total_price = Column(Float)
     created_at = Column(DateTime, default=datetime.utcnow)
