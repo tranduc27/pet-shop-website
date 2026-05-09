@@ -8,7 +8,7 @@ from sqlalchemy import func
 import pandas as pd
 import cloudinary
 import cloudinary.uploader
-
+from datetime import datetime
 st.title("⚙️ Bảng Điều Khiển Admin")
 
 # Bảo vệ cơ bản
@@ -17,64 +17,95 @@ if "admin_logged_in" not in st.session_state:
 
 if not st.session_state.admin_logged_in:
     with st.form("admin_login"):
-        username = st.text_input("Tên đăng nhập")
+        username = st.text_input("Tên đăng nhập (Admin hoặc Mã NV, VD: NV01)")
         pwd = st.text_input("Mật khẩu", type="password")
         if st.form_submit_button("Đăng nhập"):
             if username == "admin" and pwd == "admin":  # gán cứng đơn giản cho bản demo
                 st.session_state.admin_logged_in = True
+                st.session_state.admin_role = "admin"
+                st.session_state.admin_username = "Admin"
+                st.rerun()
+            elif username.startswith("NV") and pwd == "123456": # Giả sử mật khẩu mặc định của nhân viên là 123456
+                st.session_state.admin_logged_in = True
+                st.session_state.admin_role = "staff"
+                st.session_state.admin_username = username
                 st.rerun()
             else:
-                st.error("Tên đăng nhập hoặc mật khẩu không đúng")
+                db_temp = SessionLocal()
+                staff_user = db_temp.query(User).filter(User.username == username, User.password == pwd, User.role == 'Staff').first()
+                db_temp.close()
+                if staff_user:
+                    st.session_state.admin_logged_in = True
+                    st.session_state.admin_role = "staff"
+                    st.session_state.admin_username = username
+                    st.rerun()
+                else:
+                    st.error("Tên đăng nhập hoặc mật khẩu không đúng")
     st.stop()
+
+st.sidebar.markdown(f"**Xin chào, {st.session_state.get('admin_username', 'Admin')}!**")
+if st.sidebar.button("Đăng xuất", use_container_width=True):
+    for key in ['admin_logged_in', 'admin_role', 'admin_username']:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.rerun()
 
 db = SessionLocal()
 try:
-    # Tổng quan Dashboard
-    total_products = db.query(Product).count()
-    total_orders = db.query(Order).count()
-    total_revenue = db.query(func.sum(Order.total_price)).filter(Order.status != 'returned').scalar() or 0
-    total_users = db.query(User).count()
-    
-    st.subheader("📊 Tổng quan")
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Sản phẩm", total_products)
-    col2.metric("Đơn hàng", total_orders)
-    col3.metric("Doanh thu", f"{total_revenue:,.0f} đ")
-    col4.metric("Người dùng", total_users)
-    st.divider()
+    is_admin = st.session_state.get("admin_role", "admin") == "admin"
 
-    st.subheader("📈 Thống kê doanh thu")
-    stat_orders = db.query(Order).filter(Order.status != 'returned').all()
-    if stat_orders:
-        df_stat = pd.DataFrame([{
-            'total_price': o.total_price,
-            'created_at': o.created_at
-        } for o in stat_orders])
+    if is_admin:
+        # Tổng quan Dashboard
+        total_products = db.query(Product).count()
+        total_orders = db.query(Order).count()
+        total_revenue = db.query(func.sum(Order.total_price)).filter(Order.status != 'returned').scalar() or 0
+        total_users = db.query(User).count()
         
-        df_stat['created_at'] = pd.to_datetime(df_stat['created_at'])
-        df_stat['Tuần'] = df_stat['created_at'].dt.to_period('W').apply(lambda r: r.start_time.strftime('%Y-%m-%d'))
-        df_stat['Tháng'] = df_stat['created_at'].dt.to_period('M').apply(lambda r: r.strftime('%Y-%m'))
-        df_stat['Năm'] = df_stat['created_at'].dt.to_period('Y').apply(lambda r: r.strftime('%Y'))
-        
-        time_period = st.radio("Chọn mốc thời gian:", ["Theo Tuần", "Theo Tháng", "Theo Năm"], horizontal=True)
-        
-        if time_period == "Theo Tuần":
-            group_col = 'Tuần'
-        elif time_period == "Theo Tháng":
-            group_col = 'Tháng'
-        else:
-            group_col = 'Năm'
+        st.subheader("📊 Tổng quan")
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Sản phẩm", total_products)
+        col2.metric("Đơn hàng", total_orders)
+        col3.metric("Doanh thu", f"{total_revenue:,.0f} đ")
+        col4.metric("Người dùng", total_users)
+        st.divider()
+
+        st.subheader("📈 Thống kê doanh thu")
+        stat_orders = db.query(Order).filter(Order.status != 'returned').all()
+        if stat_orders:
+            df_stat = pd.DataFrame([{
+                'total_price': o.total_price,
+                'created_at': o.created_at
+            } for o in stat_orders])
             
-        revenue_df = df_stat.groupby(group_col)['total_price'].sum().reset_index()
-        revenue_df.rename(columns={'total_price': 'Doanh thu'}, inplace=True)
-        
-        st.bar_chart(revenue_df.set_index(group_col))
-    else:
-        st.info("Chưa có dữ liệu doanh thu.")
-        
-    st.divider()
+            df_stat['created_at'] = pd.to_datetime(df_stat['created_at'])
+            df_stat['Tuần'] = df_stat['created_at'].dt.to_period('W').apply(lambda r: r.start_time.strftime('%Y-%m-%d'))
+            df_stat['Tháng'] = df_stat['created_at'].dt.to_period('M').apply(lambda r: r.strftime('%Y-%m'))
+            df_stat['Năm'] = df_stat['created_at'].dt.to_period('Y').apply(lambda r: r.strftime('%Y'))
+            
+            time_period = st.radio("Chọn mốc thời gian:", ["Theo Tuần", "Theo Tháng", "Theo Năm"], horizontal=True)
+            
+            if time_period == "Theo Tuần":
+                group_col = 'Tuần'
+            elif time_period == "Theo Tháng":
+                group_col = 'Tháng'
+            else:
+                group_col = 'Năm'
+                
+            revenue_df = df_stat.groupby(group_col)['total_price'].sum().reset_index()
+            revenue_df.rename(columns={'total_price': 'Doanh thu'}, inplace=True)
+            
+            st.bar_chart(revenue_df.set_index(group_col))
+        else:
+            st.info("Chưa có dữ liệu doanh thu.")
+            
+        st.divider()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["Sản phẩm", "Đơn hàng", "Đánh giá", "Tài khoản"])
+    if is_admin:
+        tabs = st.tabs(["Sản phẩm", "Đơn hàng", "Đánh giá", "Tài khoản"])
+        tab1, tab2, tab3, tab4 = tabs
+    else:
+        tabs = st.tabs(["Sản phẩm", "Đơn hàng"])
+        tab1, tab2 = tabs
     @st.dialog("Thêm sản phẩm mới", width="large")
     def add_product_dialog():
         with st.form("add_product"):
@@ -130,13 +161,17 @@ try:
     with tab1:
         st.subheader("Quản lý sản phẩm")
         
-        c1, c2 = st.columns(2)
-        with c1:
+        if is_admin:
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button("➕ Thêm sản phẩm mới", use_container_width=True):
+                    add_product_dialog()
+            with c2:
+                if st.button("🗑️ Xóa sản phẩm", use_container_width=True):
+                    delete_product_dialog()
+        else:
             if st.button("➕ Thêm sản phẩm mới", use_container_width=True):
                 add_product_dialog()
-        with c2:
-            if st.button("🗑️ Xóa sản phẩm", use_container_width=True):
-                delete_product_dialog()
                 
         st.divider()
 
@@ -148,70 +183,121 @@ try:
                 'Đang giảm giá': p.is_today_sale, 'Phần trăm giảm %': p.discount_percent if p.discount_percent is not None else 0.0
             } for p in prods])
             
-            edited_df = st.data_editor(
-                df, 
-                width="stretch", 
-                disabled=["ID"], 
-                key="product_editor",
-                column_config={
-                    "URL hình ảnh": st.column_config.TextColumn(
-                        "URL hình ảnh (Cloudinary)", help="Đường dẫn hình ảnh sản phẩm"
-                    ),
-                    "Giá": st.column_config.NumberColumn(
-                        "Giá (VNĐ)",
-                        help="Giá bán sản phẩm",
-                        min_value=0,
-                        step=1000,
-                        format="%d đ"
-                    ),
-                    "Phần trăm giảm %": st.column_config.NumberColumn(
-                        "Giảm giá (%)",
-                        min_value=0,
-                        max_value=100,
-                        format="%d %%"
-                    ),
-                    "Loại thú cưng": st.column_config.SelectboxColumn(
-                        "Dành cho",
-                        help="Dành cho thú cưng nào",
-                        options=["Chung", "Chó", "Mèo"],
-                        required=True
-                    ),
-                    "Đang giảm giá": st.column_config.CheckboxColumn(
-                        "Đang Sale?",
-                        default=False,
-                    )
-                }
-            )
-            
-            if st.button("Lưu thay đổi", type="primary"):
-                for index, row in edited_df.iterrows():
-                    p_id = row['ID']
-                    p = db.query(Product).filter_by(id=p_id).first()
-                    if p:
-                        p.name = row['Tên sản phẩm']
-                        p.pet_type = row['Loại thú cưng']
-                        p.description = row.get('Mô tả', '')
-                        p.price = float(row['Giá'])
-                        p.stock = int(row['Tồn kho'])
-                        p.image_url = row['URL hình ảnh'] if row['URL hình ảnh'] else None
-                        p.is_today_sale = bool(row['Đang giảm giá'])
-                        p.discount_percent = float(row['Phần trăm giảm %'])
-                db.commit()
-                st.success("Cập nhật sản phẩm thành công!")
-                st.rerun()
+            if is_admin:
+                edited_df = st.data_editor(
+                    df, 
+                    width="stretch", 
+                    disabled=["ID"], 
+                    key="product_editor",
+                    column_config={
+                        "URL hình ảnh": st.column_config.TextColumn(
+                            "URL hình ảnh (Cloudinary)", help="Đường dẫn hình ảnh sản phẩm"
+                        ),
+                        "Giá": st.column_config.NumberColumn(
+                            "Giá (VNĐ)",
+                            help="Giá bán sản phẩm",
+                            min_value=0,
+                            step=1000,
+                            format="%d đ"
+                        ),
+                        "Phần trăm giảm %": st.column_config.NumberColumn(
+                            "Giảm giá (%)",
+                            min_value=0,
+                            max_value=100,
+                            format="%d %%"
+                        ),
+                        "Loại thú cưng": st.column_config.SelectboxColumn(
+                            "Dành cho",
+                            help="Dành cho thú cưng nào",
+                            options=["Chung", "Chó", "Mèo"],
+                            required=True
+                        ),
+                        "Đang giảm giá": st.column_config.CheckboxColumn(
+                            "Đang Sale?",
+                            default=False,
+                        )
+                    }
+                )
+                
+                if st.button("Lưu thay đổi", type="primary"):
+                    for index, row in edited_df.iterrows():
+                        p_id = row['ID']
+                        p = db.query(Product).filter_by(id=p_id).first()
+                        if p:
+                            p.name = row['Tên sản phẩm']
+                            p.pet_type = row['Loại thú cưng']
+                            p.description = row.get('Mô tả', '')
+                            p.price = float(row['Giá'])
+                            p.stock = int(row['Tồn kho'])
+                            p.image_url = row['URL hình ảnh'] if row['URL hình ảnh'] else None
+                            p.is_today_sale = bool(row['Đang giảm giá'])
+                            p.discount_percent = float(row['Phần trăm giảm %'])
+                    db.commit()
+                    st.success("Cập nhật sản phẩm thành công!")
+                    st.rerun()
+            else:
+                st.dataframe(
+                    df, 
+                    width="stretch", 
+                    column_config={
+                        "URL hình ảnh": st.column_config.TextColumn(
+                            "URL hình ảnh (Cloudinary)", help="Đường dẫn hình ảnh sản phẩm"
+                        ),
+                        "Giá": st.column_config.NumberColumn(
+                            "Giá (VNĐ)",
+                            format="%d đ"
+                        ),
+                        "Phần trăm giảm %": st.column_config.NumberColumn(
+                            "Giảm giá (%)",
+                            format="%d %%"
+                        )
+                    }
+                )
     with tab2:
         st.subheader("Xem đơn hàng")
+        
+        # Đơn hàng chờ xác nhận
+        pending_orders = db.query(Order).filter((Order.status == 'pending') | (Order.status == 'Pending')).order_by(Order.created_at.desc()).all()
+        if pending_orders:
+            st.markdown("### ⏳ Đơn hàng chờ xác nhận")
+            for po in pending_orders:
+                with st.expander(f"Đơn hàng #{po.id} - {po.guest_name or 'Khách ẩn danh'} - {po.total_price:,.0f} đ"):
+                    st.write(f"**Ngày đặt:** {po.created_at.strftime('%Y-%m-%d %H:%M') if po.created_at else 'N/A'}")
+                    st.write(f"**SĐT:** {po.guest_phone or 'N/A'}")
+                    st.write(f"**Địa chỉ & Ghi chú:**")
+                    st.code(po.guest_address or 'N/A', language="text")
+                    
+                    c_btn1, c_btn2, c_btn3 = st.columns([1, 1, 2])
+                    with c_btn1:
+                        if st.button("✅ Xác nhận", key=f"confirm_{po.id}", type="primary"):
+                            po.status = "confirmed"
+                            po.confirmed_by = st.session_state.get('admin_username', 'Admin')
+                            po.confirmed_at = datetime.utcnow()
+                            db.commit()
+                            st.success(f"Đã xác nhận đơn hàng #{po.id}!")
+                            st.rerun()
+                    with c_btn2:
+                        if st.button("❌ Hủy", key=f"cancel_{po.id}"):
+                            po.status = "cancelled"
+                            db.commit()
+                            st.warning(f"Đã hủy đơn hàng #{po.id}!")
+                            st.rerun()
+            st.divider()
+
+        st.markdown("### 📋 Tất cả đơn hàng")
         orders = db.query(Order).order_by(Order.created_at.desc()).all()
         if orders:
             odf = pd.DataFrame([{
                 'ID': o.id, 
-                'Trạng thái': o.status, 
+                'Trạng thái': o.status.lower() if o.status else "pending", 
                 'Khách hàng': o.guest_name or "N/A", 
                 'SĐT': o.guest_phone or "N/A",
                 'Địa chỉ': o.guest_address or "N/A",
                 'Tổng tiền': o.total_price, 
                 'Ngày đặt': o.created_at.strftime('%Y-%m-%d %H:%M') if o.created_at else "", 
                 'Ngày giao': o.delivery_date.strftime('%Y-%m-%d') if o.delivery_date else "Chưa có",
+                'Người xác nhận': o.confirmed_by or "Chưa có",
+                'TG xác nhận': o.confirmed_at.strftime('%Y-%m-%d %H:%M') if o.confirmed_at else "Chưa có",
                 'Lý do trả hàng': o.return_reason or "",
                 'Ảnh trả hàng': o.return_image_url or None,
                 'Ghi chú': o.admin_note or ""
@@ -220,12 +306,12 @@ try:
             edited_odf = st.data_editor(
                 odf, 
                 width="stretch", 
-                disabled=["ID", "Khách hàng", "SĐT", "Địa chỉ", "Tổng tiền", "Ngày đặt", "Ngày giao", "Lý do trả hàng", "Ảnh trả hàng"],
+                disabled=["ID", "Khách hàng", "SĐT", "Địa chỉ", "Tổng tiền", "Ngày đặt", "Ngày giao", "Người xác nhận", "TG xác nhận", "Lý do trả hàng", "Ảnh trả hàng"],
                 column_config={
                     "Trạng thái": st.column_config.SelectboxColumn(
                         "Trạng thái",
                         help="Thay đổi trạng thái đơn hàng",
-                        options=["pending", "shipped", "delivered", "return_requested", "returned", "return_rejected"],
+                        options=["pending", "confirmed", "shipped", "delivered", "cancelled", "return_requested", "returned", "return_rejected"],
                         required=True
                     ),
                     "Ảnh trả hàng": st.column_config.ImageColumn(
@@ -247,8 +333,11 @@ try:
                     o_note = row['Ghi chú']
                     o = db.query(Order).filter_by(id=o_id).first()
                     if o:
-                        if o.status != o_status:
+                        if o.status != o_status and o.status.lower() != o_status:
                             o.status = o_status
+                            if o_status == 'confirmed' and not o.confirmed_by:
+                                o.confirmed_by = st.session_state.get('admin_username', 'Admin')
+                                o.confirmed_at = datetime.utcnow()
                         if o.admin_note != o_note:
                             o.admin_note = o_note
                 db.commit()
@@ -257,58 +346,60 @@ try:
         else:
             st.info("Chưa có đơn hàng nào.")
             
-    with tab3:
-        st.subheader("Quản lý đánh giá")
-        reviews = db.query(Review).order_by(Review.created_at.desc()).all()
-        if reviews:
-            rev_df = pd.DataFrame([{
-                'ID': r.id, 'Người đánh giá': r.reviewer_name, 'Số sao': r.rating, 
-                'Loại': f"Sản phẩm #{r.product_id}" if r.product_id else "Cửa hàng",
-                'Bình luận': r.comment, 'Ngày tạo': r.created_at.strftime("%Y-%m-%d %H:%M") if r.created_at else ""
-            } for r in reviews])
-            st.dataframe(rev_df, width="stretch")
+    if is_admin:
+        with tab3:
+            st.subheader("Quản lý đánh giá")
+            reviews = db.query(Review).order_by(Review.created_at.desc()).all()
+            if reviews:
+                rev_df = pd.DataFrame([{
+                    'ID': r.id, 'Người đánh giá': r.reviewer_name, 'Số sao': r.rating, 
+                    'Loại': f"Sản phẩm #{r.product_id}" if r.product_id else "Cửa hàng",
+                    'Bình luận': r.comment, 'Ngày tạo': r.created_at.strftime("%Y-%m-%d %H:%M") if r.created_at else ""
+                } for r in reviews])
+                st.dataframe(rev_df, width="stretch")
+                
+                with st.expander("Xóa đánh giá"):
+                    with st.form("delete_review_form"):
+                        rev_id_to_delete = st.number_input("ID đánh giá cần xóa", min_value=1, step=1)
+                        if st.form_submit_button("Xóa", type="primary"):
+                            rev_to_del = db.query(Review).filter_by(id=rev_id_to_delete).first()
+                            if rev_to_del:
+                                db.delete(rev_to_del)
+                                db.commit()
+                                st.success(f"Đã xóa thành công đánh giá #{rev_id_to_delete}!")
+                                st.rerun()
+                            else:
+                                st.error("Không tìm thấy đánh giá.")
+            else:
+                st.info("Chưa có đánh giá nào.")
             
-            with st.expander("Xóa đánh giá"):
-                with st.form("delete_review_form"):
-                    rev_id_to_delete = st.number_input("ID đánh giá cần xóa", min_value=1, step=1)
-                    if st.form_submit_button("Xóa", type="primary"):
-                        rev_to_del = db.query(Review).filter_by(id=rev_id_to_delete).first()
-                        if rev_to_del:
-                            db.delete(rev_to_del)
-                            db.commit()
-                            st.success(f"Đã xóa thành công đánh giá #{rev_id_to_delete}!")
-                            st.rerun()
-                        else:
-                            st.error("Không tìm thấy đánh giá.")
-        else:
-            st.info("Chưa có đánh giá nào.")
-            
-    with tab4:
-        st.subheader("Quản lý tài khoản")
-        users = db.query(User).all()
-        if users:
-            u_df = pd.DataFrame([{
-                'ID': u.id,
-                'Tên đăng nhập': u.username,
-                'Email': u.email or "",
-                'Số điện thoại': u.phone or "",
-                'Vai trò': u.role
-            } for u in users])
-            st.dataframe(u_df, width="stretch")
-            
-            with st.expander("Xóa tài khoản"):
-                with st.form("delete_user_form"):
-                    u_id_to_delete = st.number_input("ID tài khoản cần xóa", min_value=1, step=1)
-                    if st.form_submit_button("Xóa", type="primary"):
-                        u_to_del = db.query(User).filter_by(id=u_id_to_delete).first()
-                        if u_to_del:
-                            db.delete(u_to_del)
-                            db.commit()
-                            st.success(f"Đã xóa thành công tài khoản #{u_id_to_delete}!")
-                            st.rerun()
-                        else:
-                            st.error("Không tìm thấy tài khoản.")
-        else:
-            st.info("Chưa có tài khoản nào.")
+    if is_admin:
+        with tab4:
+            st.subheader("Quản lý tài khoản")
+            users = db.query(User).all()
+            if users:
+                u_df = pd.DataFrame([{
+                    'ID': u.id,
+                    'Tên đăng nhập': u.username,
+                    'Email': u.email or "",
+                    'Số điện thoại': u.phone or "",
+                    'Vai trò': u.role
+                } for u in users])
+                st.dataframe(u_df, width="stretch")
+                
+                with st.expander("Xóa tài khoản"):
+                    with st.form("delete_user_form"):
+                        u_id_to_delete = st.number_input("ID tài khoản cần xóa", min_value=1, step=1)
+                        if st.form_submit_button("Xóa", type="primary"):
+                            u_to_del = db.query(User).filter_by(id=u_id_to_delete).first()
+                            if u_to_del:
+                                db.delete(u_to_del)
+                                db.commit()
+                                st.success(f"Đã xóa thành công tài khoản #{u_id_to_delete}!")
+                                st.rerun()
+                            else:
+                                st.error("Không tìm thấy tài khoản.")
+            else:
+                st.info("Chưa có tài khoản nào.")
 finally:
     db.close()

@@ -426,7 +426,7 @@ try:
                     guest_phone=phone,
                     guest_address=final_address,
                     total_price=total,
-                    status="Pending",
+                    status="pending",
                     delivery_date=None
                 )
                 db.add(new_order)

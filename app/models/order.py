@@ -20,6 +20,7 @@ class Order(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     delivery_date = Column(DateTime, nullable=True)
     status = Column(String(20), default="pending")
-
+    confirmed_by = Column(String(100), nullable=True)
+    confirmed_at = Column(DateTime, nullable=True)
     owner = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order")
